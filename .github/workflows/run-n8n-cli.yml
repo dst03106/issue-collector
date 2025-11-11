@@ -1,0 +1,55 @@
+name: Run n8n Workflow CLI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  run-workflow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci || echo "No dependencies"
+
+      - name: Run workflow
+        env:
+          N8N_LOG_LEVEL: "error"
+          NODE_FUNCTION_ALLOW_EXTERNAL: "yaml,mjml"
+        run: |
+          cat << 'EOF' > cred.json
+          [
+            {
+                "id": "googlePalmApi",
+                "name": "Google Gemini(PaLM) Api account",
+                "type": "googlePalmApi",
+                "data": {
+                  "apiKey": "${{ secrets.GOOGLE_PALM_API_KEY }}",
+                  "host": "https://generativelanguage.googleapis.com"
+                }
+            },
+            {
+                "id": "gmailOAuth2",
+                "name": "Gmail account",
+                "type": "gmailOAuth2",
+                "data": {
+                    "clientId": "${{ secrets.GMAIL_OAUTH2_CLIENT_ID }}",
+                    "clientSecret": "${{ secrets.GMAIL_OAUTH2_CLIENT_SECRET }}"
+                }
+            }
+          ] 
+          EOF
+          npx n8n import:credentials --input="cred.json"
+          npx n8n import:workflow --input="./.github/workflows/test.json"
+          WORKFLOW_ID=$(sqlite3 ~/.n8n/database.sqlite "SELECT id FROM workflow_entity ORDER BY createdAt DESC LIMIT 1;")
+          npx n8n execute workflow --id $WORKFLOW_ID

@@ -1,0 +1,409 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "batchSize": "={{ 1 }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        224,
+        672
+      ],
+      "id": "6265745c-fd1f-41f3-be59-a45234b1e27e",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().filter(\n  item => !(\n    item.json.pull_request ||\n    item.json.user.type === \"Bot\" || \n    /bot$/i.test(item.json.user.login)\n  )\n)"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        672
+      ],
+      "id": "5e20b7c0-24a9-4fd5-8bf5-09404aa189d2",
+      "name": "Filter Issue"
+    },
+    {
+      "parameters": {
+        "jsCode": "var issue = $('Loop Over Items').first().json;\nvar comments = [];\nfor (const item of $input.all()) {\n  if (\n    Object.keys(item.json).length === 0 ||\n    item.json.user?.type === \"Bot\" ||  \n    /\\[bot\\]$/i.test(item.json.user?.login)\n  ) continue;\n  comments.push(`${item.json.user.login}: ${item.json.body}`)\n}\nreturn {\n    \"title\": issue.title,\n    \"body\": issue.body.slice(0, 500),\n    \"url\": issue.html_url,\n    \"comments\": comments,\n    \"labels\": issue.labels?.map(label => label.name) ?? [],\n    \"type\": issue.type?.name ?? ''\n  };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        1072
+      ],
+      "id": "2b9dab4b-5010-4ebd-961e-6b609dd05200",
+      "name": "Exclude Bot Comment",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $json.repo }}/issues",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "page",
+              "value": "1"
+            },
+            {
+              "name": "per_page",
+              "value": "15"
+            },
+            {
+              "name": "state",
+              "value": "open"
+            },
+            {
+              "name": "sort",
+              "value": "created"
+            },
+            {
+              "name": "direction",
+              "value": "desc"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -224,
+        672
+      ],
+      "id": "1073173e-7da9-4831-99f5-bdf04e9d38bb",
+      "name": "HTTP Request (Issue)"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.comments_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        336,
+        1024
+      ],
+      "id": "085f97f2-e2ca-41ff-9702-3f222edd8b40",
+      "name": "HTTP Request (Comment)",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nlet markdwon_list = [];\nfor (let i = 0; i < $input.all().length; i++) {\n  const issue = $input.all()[i].json;\n  const comments_text = issue.comments?.length ? issue.comments.map(c => `- ${c}`).join('\\n') : \"댓글 없음\";\n  const labels_text = issue.labels ?? \"라벨 없음\";\n  const issue_type = issue.type ?? \"타입 없음\";\n  markdwon_list.push(`\n    ## Issue ${i}\n    **Title**: ${issue.title}\n\n    **Type**: ${issue_type}\n\n    **Labels**: ${labels_text}\n\n    **Body**: ${issue.body}\n\n    **Comments**: ${comments_text}\n\n    **URL**: ${issue.url}\n  `)\n}\nreturn {\n  markdown_list: markdwon_list.join('\\n')\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        576
+      ],
+      "id": "99abf255-7f65-4772-8bf1-90cf499a0b65",
+      "name": "Convert Markdown"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=너는 오픈소스에 기여하려는 오픈소스 기여 경험이 많은 10년차 개발자야.\n\n아래 이슈들을 검색해서 내용을 읽어보고 밑의 기여하기 좋은 기준에 맞게 분류해줘.\n이슈들이 있는 url은 https://github.com/{{ $('Code in JavaScript').first().json.repo}}/issues 이야.\n이슈를 분류할땐 이슈 내용, 원인, 해결방향과 기준에 얼마나 잘 맞는지(상,중,하), 기술적인 난이도 (상,중,하) 로 평가해줘.\n\n[기여하기 좋은 이슈 기준]\n이슈의 내용이 상세하게 잘 작성되어 있는 경우 \n이슈의 내용 안에 버그나 에러의 로그와 재현할 수 있는 방법이 명시되어 있는 경우 \n이슈 내에 의심되는 소스코드의 위치가 제보자나 메인테이너에 의해 특정된 경우 \n메인테이너가 이슈의 내용을 확인하고 문제가 맞아서 방향을 정해주거나 기여 해달라고 한 경우 \n메인테이너가 직접 작성한 이슈\n이슈의 라벨에 good first issue 가 달려있고, blocked 나 wait-for-triage가 없는 이슈 \n이슈를 해결하는 PR이 아직 생성되지 않은 이슈 (누군가가 PR을 만들겠다고만 말하고 PR이 아직 생성 안된건 상관 없음)\n\n위의 기준에 잘 맞는 이슈일수록 상세하게 설명하고 강조해줘.\n위의 기준에 안맞는 이슈는 요약할 필요 없어.\n\nGenerate a YAML object that matches the TypeScript type $IssueCollection below:\nDo not include the backtick character (`) anywhere in your output.\n\ntype Level = \"high\" | \"medium\" | \"low\";\n\ninterface LevelWithReasons {\n  level: Level;\n  reasons: string[];\n}\n\ninterface Issue {\n  issueTitle: string;\n  issueDescription: string;\n  rootCause: string;\n  resolutionApproach: string[];\n  complianceWithStandards: LevelWithReasons;\n  technicalDifficulty: LevelWithReasons;\n}\n\ninterface IssueCollection {\n  issues: Issue[];\n}\n\n------------\nExample output:\nissues:\n  - issueTitle: \"\"\n    issueDescription: \"\"\n    rootCause: \"\"\n    resolutionApproach: |\n      ...\n    complianceWithStandards:\n      level: \"medium\"\n      reasons: |\n        ...\n    technicalDifficulty:\n      level: \"high\"\n      reasons: |\n        ...",
+              "role": "model"
+            },
+            {
+              "content": "={{ $json.markdown_list }}\n\nGenerate a YAML object that matches the TypeScript type $IssueCollection below:\nDo not include the backtick character (`) anywhere in your output.\n\ntype Level = \"high\" | \"medium\" | \"low\";\n\ninterface LevelWithReasons {\n  level: Level;\n  reasons: string[];\n}\n\ninterface Issue {\n  issueTitle: string;\n  issueDescription: string;\n  rootCause: string;\n  resolutionApproach: string[];\n  complianceWithStandards: LevelWithReasons;\n  technicalDifficulty: LevelWithReasons;\n}\n\ninterface IssueCollection {\n  issues: Issue[];\n}\n\n------------\nExample output:\nissues:\n  - issueTitle: \"\"\n    issueDescription: \"\"\n    rootCause: \"\"\n    resolutionApproach: |\n      ...\n    complianceWithStandards:\n      level: \"medium\"\n      reasons: |\n        ...\n    technicalDifficulty:\n      level: \"high\"\n      reasons: |\n        ..."
+            }
+          ]
+        },
+        "simplify": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        640,
+        576
+      ],
+      "id": "22a03bf6-d483-4551-a491-0e0c38e90116",
+      "name": "Message a model",
+      "executeOnce": true,  
+      "notesInFlow": false,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "mock-googlePalmApi",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const YAML = require('yaml');\nfor (const item of $input.all()) {\n  item.json = YAML.parse($input.first().json.candidates[0].content.parts[0].text);\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        576
+      ],
+      "id": "e1518ba9-818c-4a1f-877a-f773dad50ee1",
+      "name": "parse YAML1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nlet test = [];\nconst issues = $input.first().json.issues;\nfor (const issue of issues) {\n  let issueInfo = `<mj-text font-size=\"22px\">${issue.issueTitle}</mj-text>\n          <mj-spacer></mj-spacer>\n          <mj-text font-size=\"15px\" font-weight=\"bold\">🧾 이슈 내용</mj-text>\n          <mj-text font-size=\"14px\" line-height=\"1.6\">${issue.issueDescription}</mj-text>\n          <mj-text font-size=\"15px\" font-weight=\"bold\">🧩 원인</mj-text>\n          <mj-text font-size=\"14px\" line-height=\"1.6\">${issue.rootCause}</mj-text>`;\n  \n  let resolutionApproach = `<mj-text font-size=\"15px\" font-weight=\"bold\">🛠️ 해결 방향</mj-text><mj-text font-size=\"14px\" line-height=\"1.6\">`;\n  let approaches = [] // TODO : 동일한 로직 함수로 만들기\n  for (const x of issue.resolutionApproach) {\n    approaches.push(`• ${x}`);\n  }\n  resolutionApproach += approaches.join('<br/>');\n  resolutionApproach += '</mj-text>';\n  \n  let complianceWithStandards = `<mj-text font-size=\"15px\" font-weight=\"bold\">✅ 기준 적합성: ${issue.complianceWithStandards.level}</mj-text><mj-text font-size=\"14px\" line-height=\"1.6\">`\n  let standardReasons = [] \n  for (const reason of issue.complianceWithStandards.reasons) {\n    standardReasons.push(`• ${reason}`);\n  }\n  complianceWithStandards += standardReasons.join('<br/>');\n  complianceWithStandards += '</mj-text>';\n  \n  let technicalDifficulty = `<mj-text font-size=\"15px\" font-weight=\"bold\">🧗 기술적인 난이도: ${issue.technicalDifficulty.level}</mj-text><mj-text font-size=\"14px\" line-height=\"1.6\">`\n  let difficultyReason  = []\n  for (const reason of issue.technicalDifficulty.reasons) {\n    difficultyReason.push(`• ${reason}`);\n  } \n  technicalDifficulty += difficultyReason.join('<br/>');\n  technicalDifficulty += '</mj-text>';\n  \n  test.push(issueInfo + resolutionApproach + complianceWithStandards + technicalDifficulty)\n}\n\nreturn {\n  issueHTML: `\n    <mjml>\n      <mj-body>\n    \n        <mj-section background-color=\"#E9E9E9\">\n      <mj-column>\n\t\t\t\t<mj-divider/>\n        <mj-image src=\"https://lh3.googleusercontent.com/d/11VgJS7_uMNmlBLaiN9S68Nz-QWZIsLV4\" width=\"500\" height=\"150\"/>\n        <mj-divider  border-width=\"2px\"/>\n      </mj-column>\n    </mj-section>\n    \n        <mj-wrapper border=\"1px solid #000000\" padding=\"50px 30px\">\n          <mj-section>\n            <mj-column>\n              ${test.join(`<mj-divider border-width=\"1px\" border-color=\"lightgrey\"></mj-divider>`)}\n            </mj-column>\n          </mj-section>\n        </mj-wrapper>\n      </mj-body>\n    </mjml>\n`\n}\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        576
+      ],
+      "id": "09339ec8-6306-4e73-b945-ac7f98840e26",
+      "name": "convert MJML1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const mjml2html = require('mjml');\n\nreturn {\n  htmlOutput: mjml2html($input.first().json.issueHTML)\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        576
+      ],
+      "id": "78414a49-3a06-4416-b00e-09695a9b4977",
+      "name": "convert MJML to HTML1"
+    },
+    {
+      "parameters": {
+        "sendTo": "dstdbsgml@gmail.com",
+        "subject": "오픈 소스 이슈 ",
+        "message": "={{ $json.htmlOutput.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1808,
+        592
+      ],
+      "id": "59f51653-8516-446d-a408-439b86386a6c",
+      "name": "Send a message2",
+      "webhookId": "0332cd31-4ef4-43bc-b5f8-0ac916086e12",
+      "executeOnce": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mock-gmailOAuth2",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        672
+      ],
+      "id": "9d915cd3-9077-4308-b9f0-b6fc759c1441",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  repo: \"vercel/next.js\"\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        672
+      ],
+      "id": "b0c87ce1-9c4b-4839-888a-334220da5734",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Convert Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request (Comment)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Issue": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Exclude Bot Comment": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request (Issue)": {
+      "main": [
+        [
+          {
+            "node": "Filter Issue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request (Comment)": {
+      "main": [
+        [
+          {
+            "node": "Exclude Bot Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Markdown": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "parse YAML1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "parse YAML1": {
+      "main": [
+        [
+          {
+            "node": "convert MJML1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "convert MJML1": {
+      "main": [
+        [
+          {
+            "node": "convert MJML to HTML1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "convert MJML to HTML1": {
+      "main": [
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request (Issue)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8d5b8770-af4e-4610-8515-b70e84e7e395",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c4eb748d1201f6efcf3fb4abe55ad9f6c4623960d681ba4f9bd76fc5b7ea8d40"
+  },
+  "tags": []
+}
