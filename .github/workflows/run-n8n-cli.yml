@@ -29,15 +29,14 @@ jobs:
         run: |
           cat << 'EOF' > cred.json
           [
-            {
-                "id": "googlePalmApi",
-                "name": "Google Gemini(PaLM) Api account",
-                "type": "googlePalmApi",
+             {
+                "id": "openRouterApi",
+                "name": "OpenRouter account",
+                "type": "openRouterApi",
                 "data": {
-                  "apiKey": "${{ secrets.GOOGLE_PALM_API_KEY }}",
-                  "host": "https://generativelanguage.googleapis.com"
+                    "apiKey": "${{ secrets.OPENROUTER_API_KEY }}"
                 }
-            },
+              },
              {
                 "id": "MailtrapTokenApi",
                 "name": "Mailtrap Token Api account",

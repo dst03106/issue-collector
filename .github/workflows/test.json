@@ -128,46 +128,6 @@
       "name": "Convert Markdown"
     },
     {
-      "parameters": {
-        "modelId": {
-          "__rl": true,
-          "value": "models/gemini-2.5-flash",
-          "mode": "list",
-          "cachedResultName": "models/gemini-2.5-flash"
-        },
-        "messages": {
-          "values": [
-            {
-              "content": "=너는 오픈소스에 기여하려는 오픈소스 기여 경험이 많은 10년차 개발자야.\n\n아래 이슈들을 검색해서 내용을 읽어보고 밑의 기여하기 좋은 기준에 맞게 분류해줘.\n이슈들이 있는 url은 https://github.com/{{ $('Code in JavaScript').first().json.repo}}/issues 이야.\n이슈를 분류할땐 이슈 내용, 원인, 해결방향과 기준에 얼마나 잘 맞는지(상,중,하), 기술적인 난이도 (상,중,하) 로 평가해줘.\n\n[기여하기 좋은 이슈 기준]\n이슈의 내용이 상세하게 잘 작성되어 있는 경우 \n이슈의 내용 안에 버그나 에러의 로그와 재현할 수 있는 방법이 명시되어 있는 경우 \n이슈 내에 의심되는 소스코드의 위치가 제보자나 메인테이너에 의해 특정된 경우 \n메인테이너가 이슈의 내용을 확인하고 문제가 맞아서 방향을 정해주거나 기여 해달라고 한 경우 \n메인테이너가 직접 작성한 이슈\n이슈의 라벨에 good first issue 가 달려있고, blocked 나 wait-for-triage가 없는 이슈 \n이슈를 해결하는 PR이 아직 생성되지 않은 이슈 (누군가가 PR을 만들겠다고만 말하고 PR이 아직 생성 안된건 상관 없음)\n\n위의 기준에 잘 맞는 이슈일수록 상세하게 설명하고 강조해줘.\n위의 기준에 안맞는 이슈는 요약할 필요 없어.\n\nGenerate a YAML object that matches the TypeScript type $IssueCollection below:\nDo not include the backtick character (`) anywhere in your output.\n\ntype Level = \"high\" | \"medium\" | \"low\";\n\ninterface LevelWithReasons {\n  level: Level;\n  reasons: string[];\n}\n\ninterface Issue {\n  issueTitle: string;\n  issueDescription: string;\n  rootCause: string;\n  resolutionApproach: string[];\n  complianceWithStandards: LevelWithReasons;\n  technicalDifficulty: LevelWithReasons;\n}\n\ninterface IssueCollection {\n  issues: Issue[];\n}\n\n------------\nExample output:\nissues:\n  - issueTitle: \"\"\n    issueDescription: \"\"\n    rootCause: \"\"\n    resolutionApproach: |\n      ...\n    complianceWithStandards:\n      level: \"medium\"\n      reasons: |\n        ...\n    technicalDifficulty:\n      level: \"high\"\n      reasons: |\n        ...",
-              "role": "model"
-            },
-            {
-              "content": "={{ $json.markdown_list }}\n\nGenerate a YAML object that matches the TypeScript type $IssueCollection below:\nDo not include the backtick character (`) anywhere in your output.\n\ntype Level = \"high\" | \"medium\" | \"low\";\n\ninterface LevelWithReasons {\n  level: Level;\n  reasons: string[];\n}\n\ninterface Issue {\n  issueTitle: string;\n  issueDescription: string;\n  rootCause: string;\n  resolutionApproach: string[];\n  complianceWithStandards: LevelWithReasons;\n  technicalDifficulty: LevelWithReasons;\n}\n\ninterface IssueCollection {\n  issues: Issue[];\n}\n\n------------\nExample output:\nissues:\n  - issueTitle: \"\"\n    issueDescription: \"\"\n    rootCause: \"\"\n    resolutionApproach: |\n      ...\n    complianceWithStandards:\n      level: \"medium\"\n      reasons: |\n        ...\n    technicalDifficulty:\n      level: \"high\"\n      reasons: |\n        ..."
-            }
-          ]
-        },
-        "simplify": false,
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.googleGemini",
-      "typeVersion": 1,
-      "position": [
-        640,
-        576
-      ],
-      "id": "22a03bf6-d483-4551-a491-0e0c38e90116",
-      "name": "Message a model",
-      "executeOnce": true,
-      "notesInFlow": false,
-      "retryOnFail": false,
-      "credentials": {
-        "googlePalmApi": {
-          "id": "googlePalmApi",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
-    },
-    {
       "parameters": {},
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
@@ -193,7 +153,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const YAML = require('yaml');\nfor (const item of $input.all()) {\n  let responseText = $input.first().json.candidates[0].content.parts[0].text\n      .replace(/^(\\n)+/, '')                 // 맨 앞의 \\n 제거\n      .replace(/^yaml/, '')                  // 'yaml' 접두어 제거\n      .replace(/^```yaml/, '')               // '```yaml' 접두어 제거\n      .trimEnd()                             // 끝의 공백 제거\n      .replace(/```$/, '');                  // '```' 접미어 제거\n  item.json = YAML.parse(responseText);\n}\n\nreturn $input.all();"
+        "jsCode": "const YAML = require('yaml');\nfor (const item of $input.all()) {\n  let response = $input.first().json.output;\n  // let response = $input.first().json.candidates[0].content.parts[0].text;\n  let responseText = response\n      .replace(/^(\\n)+/, '')                 // 맨 앞의 \\n 제거\n      .replace(/^yaml/, '')                  // 'yaml' 접두어 제거\n      .replace(/^```yaml/, '')               // '```yaml' 접두어 제거\n      .trimEnd()                             // 끝의 공백 제거\n      .replace(/```$/, '');                  // '```' 접미어 제거\n  item.json = YAML.parse(responseText);\n}\n\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -245,734 +205,77 @@
         576
       ],
       "id": "d2517a65-3774-46de-b012-adbe02539913",
-      "name": "Send an email1",
+      "name": "Send an email",
       "credentials": {
         "MailtrapTokenApi": {
           "id": "MailtrapTokenApi",
           "name": "Mailtrap Token account"
         }
       }
-    }
-  ],
-  "pinData": {
-    "convert MJML to HTML": [
-      {
-        "json": {
-          "htmlOutput": {
-            "html": "<!doctype html>\n<html lang=\"und\" dir=\"auto\" xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:o=\"urn:schemas-microsoft-com:office:office\">\n  <head>\n    <title></title>\n    <!--[if !mso]><!-->\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n    <!--<![endif]-->\n    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <style type=\"text/css\">\n      #outlook a { padding:0; }\n      body { margin:0;padding:0;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%; }\n      table, td { border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt; }\n      img { border:0;height:auto;line-height:100%; outline:none;text-decoration:none;-ms-interpolation-mode:bicubic; }\n      p { display:block;margin:13px 0; }\n    </style>\n    <!--[if mso]>\n    <noscript>\n    <xml>\n    <o:OfficeDocumentSettings>\n      <o:AllowPNG/>\n      <o:PixelsPerInch>96</o:PixelsPerInch>\n    </o:OfficeDocumentSettings>\n    </xml>\n    </noscript>\n    <![endif]-->\n    <!--[if lte mso 11]>\n    <style type=\"text/css\">\n      .mj-outlook-group-fix { width:100% !important; }\n    </style>\n    <![endif]-->\n    \n      <!--[if !mso]><!-->\n        <link href=\"https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700\" rel=\"stylesheet\" type=\"text/css\">\n        <style type=\"text/css\">\n          @import url(https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700);\n        </style>\n      <!--<![endif]-->\n\n    \n    \n    <style type=\"text/css\">\n      @media only screen and (min-width:480px) {\n        .mj-column-per-100 { width:100% !important; max-width: 100%; }\n      }\n    </style>\n    <style media=\"screen and (min-width:480px)\">\n      .moz-text-html .mj-column-per-100 { width:100% !important; max-width: 100%; }\n    </style>\n    \n    \n  \n    \n    <style type=\"text/css\">\n\n    @media only screen and (max-width:479px) {\n      table.mj-full-width-mobile { width: 100% !important; }\n      td.mj-full-width-mobile { width: auto !important; }\n    }\n  \n    </style>\n    \n    \n  </head>\n  <body style=\"word-spacing:normal;\">\n    \n    \n      <div\n         aria-roledescription=\"email\" style=\"\" role=\"article\" lang=\"und\" dir=\"auto\"\n      >\n        \n      \n      <!--[if mso | IE]><table align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" class=\"\" role=\"presentation\" style=\"width:600px;\" width=\"600\" bgcolor=\"#E9E9E9\" ><tr><td style=\"line-height:0px;font-size:0px;mso-line-height-rule:exactly;\"><![endif]-->\n    \n      \n      <div  style=\"background:#E9E9E9;background-color:#E9E9E9;margin:0px auto;max-width:600px;\">\n        \n        <table\n           align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"background:#E9E9E9;background-color:#E9E9E9;width:100%;\"\n        >\n          <tbody>\n            <tr>\n              <td\n                 style=\"direction:ltr;font-size:0px;padding:20px 0;text-align:center;\"\n              >\n                <!--[if mso | IE]><table role=\"presentation\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td class=\"\" style=\"vertical-align:top;width:600px;\" ><![endif]-->\n            \n      <div\n         class=\"mj-column-per-100 mj-outlook-group-fix\" style=\"font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;\"\n      >\n        \n      <table\n         border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"vertical-align:top;\" width=\"100%\"\n      >\n        <tbody>\n          \n              <tr>\n                <td\n                   align=\"center\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <p\n         style=\"border-top:solid 4px #000000;font-size:1px;margin:0px auto;width:100%;\"\n      >\n      </p>\n      \n      <!--[if mso | IE]><table align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-top:solid 4px #000000;font-size:1px;margin:0px auto;width:550px;\" role=\"presentation\" width=\"550px\" ><tr><td style=\"height:0;line-height:0;\"> &nbsp;\n</td></tr></table><![endif]-->\n    \n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"center\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <table\n         border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"border-collapse:collapse;border-spacing:0px;\"\n      >\n        <tbody>\n          <tr>\n            <td  style=\"width:500px;\">\n              \n      <img\n         alt=\"\" src=\"https://lh3.googleusercontent.com/d/11VgJS7_uMNmlBLaiN9S68Nz-QWZIsLV4\" style=\"border:0;display:block;outline:none;text-decoration:none;height:150;width:100%;font-size:13px;\" width=\"500\" height=\"150\"\n      />\n    \n            </td>\n          </tr>\n        </tbody>\n      </table>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"center\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <p\n         style=\"border-top:solid 2px #000000;font-size:1px;margin:0px auto;width:100%;\"\n      >\n      </p>\n      \n      <!--[if mso | IE]><table align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-top:solid 2px #000000;font-size:1px;margin:0px auto;width:550px;\" role=\"presentation\" width=\"550px\" ><tr><td style=\"height:0;line-height:0;\"> &nbsp;\n</td></tr></table><![endif]-->\n    \n    \n                </td>\n              </tr>\n            \n        </tbody>\n      </table>\n    \n      </div>\n    \n          <!--[if mso | IE]></td></tr></table><![endif]-->\n              </td>\n            </tr>\n          </tbody>\n        </table>\n        \n      </div>\n    \n      \n      <!--[if mso | IE]></td></tr></table><table align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" class=\"\" role=\"presentation\" style=\"width:600px;\" width=\"600\" ><tr><td style=\"line-height:0px;font-size:0px;mso-line-height-rule:exactly;\"><![endif]-->\n    \n      \n      <div  style=\"margin:0px auto;max-width:600px;\">\n        \n        <table\n           align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"width:100%;\"\n        >\n          <tbody>\n            <tr>\n              <td\n                 style=\"border:1px solid #000000;direction:ltr;font-size:0px;padding:50px 30px;text-align:center;\"\n              >\n                <!--[if mso | IE]><table role=\"presentation\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td class=\"\" width=\"600px\" ><table align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" class=\"\" role=\"presentation\" style=\"width:538px;\" width=\"538\" ><tr><td style=\"line-height:0px;font-size:0px;mso-line-height-rule:exactly;\"><![endif]-->\n    \n      \n      <div  style=\"margin:0px auto;max-width:538px;\">\n        \n        <table\n           align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"width:100%;\"\n        >\n          <tbody>\n            <tr>\n              <td\n                 style=\"direction:ltr;font-size:0px;padding:20px 0;text-align:center;\"\n              >\n                <!--[if mso | IE]><table role=\"presentation\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td class=\"\" style=\"vertical-align:top;width:538px;\" ><![endif]-->\n            \n      <div\n         class=\"mj-column-per-100 mj-outlook-group-fix\" style=\"font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;\"\n      >\n        \n      <table\n         border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"vertical-align:top;\" width=\"100%\"\n      >\n        <tbody>\n          \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:22px;line-height:1;text-align:left;color:#000000;\"\n      >Failed to execute 'measure' on 'Performance': 'NotFound' cannot have a negative time stamp.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   style=\"font-size:0px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"height:20px;line-height:20px;\"\n      >&#8202;</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >🧾 이슈 내용</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >Next.js 개발 모드에서 존재하지 않는 페이지(/404)로 이동한 후, `[locale]/not-found.tsx` 파일을 수정하고 페이지를 여러 번 새로고침하면 'Failed to execute 'measure' on 'Performance': 'NotFound' cannot have a negative time stamp' 에러가 발생합니다. 이 버그는 재현 가능하지만 발생하는 시점이 다소 무작위적입니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >🧩 원인</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >Next.js의 fast refresh(HMR) 기능과 에러 페이지 렌더링 과정에서 Performance API 사용 간의 타이밍 문제 또는 경쟁 조건(race condition)으로 추정됩니다. 특히 `performance.measure` 호출 시 `NotFound` 마크의 시작 및 종료 시점 계산에 오류가 발생하여 음수 타임스탬프가 기록되는 것으로 보입니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >🛠️ 해결 방향</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >• Next.js의 `not-found.tsx` 렌더링 로직과 fast refresh 관련 코드, 특히 Performance API(`PerformanceObserver`, `performance.measure`) 호출 부분을 면밀히 검토합니다.<br/>• 성능 측정 마크(`NotFound`)의 생성 및 측정 로직을 추적하여, 재렌더링이나 특정 에러 시나리오에서도 시작 및 종료 마크가 항상 유효하고 올바른 순서로 기록되는지 확인합니다.<br/>• 음수 지속 시간 계산을 방지하거나, 측정 전에 필요한 성능 마크가 존재하는지 확인하는 방어적인 로직을 추가하는 것을 고려합니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >✅ 기준 적합성: medium</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >• 이슈 내용이 상세하게 잘 작성되어 있습니다.<br/>• 버그의 에러 메시지와 재현 가능한 명확한 단계(재현 레포 링크 포함)가 제공됩니다.<br/>• 이슈 내에 의심되는 소스코드의 정확한 위치는 특정되지 않았습니다.<br/>• 메인테이너의 확인이나 기여 요청 댓글은 없습니다.<br/>• 메인테이너가 직접 작성한 이슈가 아닙니다.<br/>• good first issue 라벨이 없으며, blocked나 wait-for-triage 라벨도 없습니다.<br/>• 이슈를 해결하는 PR이 아직 생성되지 않았습니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >🧗 기술적인 난이도: medium</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >• Next.js의 코어 개발 서버 로직, 특히 HMR과 Performance API 통합 방식을 이해해야 합니다.<br/>• 경쟁 조건과 같은 미묘한 타이밍 버그를 디버깅하는 것은 복잡할 수 있습니다.<br/>• 해결책은 Next.js 런타임 또는 개발 서버 코드의 깊은 부분을 수정해야 할 수도 있습니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"center\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <p\n         style=\"border-top:solid 1px lightgrey;font-size:1px;margin:0px auto;width:100%;\"\n      >\n      </p>\n      \n      <!--[if mso | IE]><table align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-top:solid 1px lightgrey;font-size:1px;margin:0px auto;width:488px;\" role=\"presentation\" width=\"488px\" ><tr><td style=\"height:0;line-height:0;\"> &nbsp;\n</td></tr></table><![endif]-->\n    \n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:22px;line-height:1;text-align:left;color:#000000;\"\n      >`useTransition` stuck in loading state when using `router.refresh()` after calling a server action</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   style=\"font-size:0px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"height:20px;line-height:20px;\"\n      >&#8202;</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >🧾 이슈 내용</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >서버 액션 호출 후 `router.refresh()`를 사용할 때 `useTransition`이 로딩 상태에 갇히고 UI가 업데이트되지 않는 문제가 빌드된 Next.js 애플리케이션(프로덕션)에서 발생합니다. 개발 모드에서는 발생하지 않고, 재현 레포가 제공됩니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >🧩 원인</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >React의 `useTransition`, Next.js의 `router.refresh()` 및 서버 액션 간의 상호작용 문제로 추정됩니다. 특히 프로덕션 빌드 환경에서 `useTransition`의 pending 상태가 `router.refresh()` 완료 후 올바르게 해제되지 않거나, 하이드레이션 불일치, 직렬화 오류 또는 미묘한 타이밍 문제가 발생할 수 있습니다. 개발 모드와 프로덕션 빌드 간의 동작 차이가 원인일 가능성이 높습니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >🛠️ 해결 방향</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >• Next.js와 React의 소스 코드에서 `useTransition`, `router.refresh()`, 서버 액션 관련 부분을 조사하여 pending 상태 관리 및 해결 방식을 확인합니다.<br/>• 프로덕션 빌드에서 데이터 fetching, 캐싱, 또는 revalidation 로직이 transition 완료를 방해하는지 확인합니다.<br/>• 모든 React 훅과 Next.js API가 클라이언트와 서버 간에 상태를 올바르게 동기화하고 있는지 점검합니다.<br/>• `useTransition`이 pending 상태를 벗어나지 못하게 하는 미처리된 Promise 또는 비동기 작업이 있는지 확인합니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >✅ 기준 적합성: medium</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >• 이슈 내용이 상세하게 잘 작성되어 있습니다.<br/>• 버그 재현을 위한 명확한 단계(빌드/실행 지침 및 재현 레포 링크 포함)가 제공됩니다.<br/>• 이슈 내에 의심되는 소스코드의 정확한 위치는 특정되지 않았습니다.<br/>• 메인테이너의 확인이나 기여 요청 댓글은 없습니다.<br/>• 메인테이너가 직접 작성한 이슈가 아닙니다.<br/>• good first issue 라벨이 없으며, blocked나 wait-for-triage 라벨도 없습니다.<br/>• 이슈를 해결하는 PR이 아직 생성되지 않았습니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >🧗 기술적인 난이도: high</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >• React의 동시성 기능(`useTransition`), Next.js 클라이언트 라우터, 서버 액션 간의 복잡한 상호작용을 디버깅해야 합니다.<br/>• 프로덕션 전용 버그이기 때문에 디버깅 환경 설정 및 문제 격리가 어려울 수 있습니다.<br/>• React 렌더링 라이프사이클과 Next.js의 데이터 fetching/revalidation 메커니즘에 대한 깊은 이해가 필요합니다.<br/>• 해결책은 Next.js가 서버 액션 응답 및 클라이언트 측 업데이트를 조정하는 방식에 대한 근본적인 변경을 요구할 수 있습니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"center\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <p\n         style=\"border-top:solid 1px lightgrey;font-size:1px;margin:0px auto;width:100%;\"\n      >\n      </p>\n      \n      <!--[if mso | IE]><table align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-top:solid 1px lightgrey;font-size:1px;margin:0px auto;width:488px;\" role=\"presentation\" width=\"488px\" ><tr><td style=\"height:0;line-height:0;\"> &nbsp;\n</td></tr></table><![endif]-->\n    \n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:22px;line-height:1;text-align:left;color:#000000;\"\n      >App Router routes return 404 when using Pages Router i18n with domain routing</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   style=\"font-size:0px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"height:20px;line-height:20px;\"\n      >&#8202;</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >🧾 이슈 내용</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >Pages Router의 i18n 도메인 라우팅을 구성했을 때, App Router 경로들이 404 에러를 반환합니다. 예를 들어, `http://nl.example.local:3000/` (Pages Router)는 작동하지만, `http://nl.example.local:3000/test` (App Router)는 404를 반환합니다. 이는 두 라우터가 도메인 i18n과 함께 사용될 때 라우팅 충돌 또는 설정 문제임을 나타냅니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >🧩 원인</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >Next.js가 Pages Router와 App Router가 모두 활성화된 상태에서 i18n 구성(특히 `next.config.js`의 도메인 기반 라우팅)을 처리하는 방식에 문제가 있는 것으로 보입니다. Pages Router용으로 설계된 i18n 설정이 App Router 경로에 올바르게 적용되지 않아, 특정 도메인에서 App Router 경로의 URL 해석 또는 라우팅이 실패하는 것으로 추정됩니다. Next.js가 요청을 적절한 라우터로 디스패치하는 과정에 버그가 있을 수도 있습니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >🛠️ 해결 방향</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >• Next.js의 라우팅 로직, 특히 `i18n` 설정이 `next.config.js`에 있을 때 Pages Router 경로와 App Router 경로를 어떻게 구별하는지 조사합니다.<br/>• 도메인 기반 i18n이 URL을 내부적으로 어떻게 접두사 처리하거나 재작성하는지, 그리고 이 로직이 두 라우터 유형 모두에 올바르게 적용되는지 확인합니다.<br/>• 내부 URL 파서에서 라우트 매칭 순서 또는 충돌이 있는지 점검합니다.<br/>• `i18n` 설정 처리 또는 라우팅 미들웨어를 업데이트하여 도메인 i18n이 포함된 하이브리드 App/Pages Router 설정을 올바르게 지원하도록 개선합니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >✅ 기준 적합성: medium</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >• 이슈 내용이 상세하게 잘 작성되어 있습니다.<br/>• 버그 재현을 위한 명확한 단계(재현 레포 링크 및 `/etc/hosts` 설정 지침 포함)가 제공됩니다.<br/>• 이슈 내에 의심되는 소스코드의 정확한 위치는 특정되지 않았습니다.<br/>• 메인테이너의 확인이나 기여 요청 댓글은 없습니다.<br/>• 메인테이너가 직접 작성한 이슈가 아닙니다.<br/>• good first issue 라벨이 없으며, blocked나 wait-for-triage 라벨도 없습니다.<br/>• 이슈를 해결하는 PR이 아직 생성되지 않았습니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >🧗 기술적인 난이도: high</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >• Next.js의 듀얼 라우터 아키텍처, i18n 구현, 그리고 URL 파싱/매칭 로직에 대한 깊은 이해가 필요합니다.<br/>• 도메인 기반 설정에서 라우팅 충돌을 디버깅하는 것은 매우 복잡할 수 있습니다.<br/>• 해결책은 코어 라우팅 메커니즘 또는 설정 파싱 방식에 대한 변경을 요구할 수 있습니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"center\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <p\n         style=\"border-top:solid 1px lightgrey;font-size:1px;margin:0px auto;width:100%;\"\n      >\n      </p>\n      \n      <!--[if mso | IE]><table align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-top:solid 1px lightgrey;font-size:1px;margin:0px auto;width:488px;\" role=\"presentation\" width=\"488px\" ><tr><td style=\"height:0;line-height:0;\"> &nbsp;\n</td></tr></table><![endif]-->\n    \n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:22px;line-height:1;text-align:left;color:#000000;\"\n      >Intercepting route modal shows stale background after first open/close in production (App Router + parallel routes)</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   style=\"font-size:0px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"height:20px;line-height:20px;\"\n      >&#8202;</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >🧾 이슈 내용</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >App Router와 병렬/인터셉팅 라우트를 사용하는 Next.js 프로덕션 빌드에서, 인터셉팅 라우트 모달을 처음 열고 닫은 후 다시 열면 배경 페이지가 이전 상태(예: `/dark/discover` 대신 `/dark/chat`)로 고정되어 나타나는 문제가 발생합니다. 이는 모달을 다시 열었을 때 배경 상태 보존 또는 재렌더링에 문제가 있음을 시사합니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >🧩 원인</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >Next.js App Router가 병렬 라우트와 인터셉팅 세그먼트의 상태를 관리하는 방식, 특히 프로덕션 환경에서 발생하는 문제로 추정됩니다. 인터셉팅 라우트가 열렸다가 닫힌 후, 배경 라우트의 상태가 올바르게 복원되거나 재렌더링되지 않는 것 같습니다. 이는 배경 컴포넌트나 데이터가 잘못 캐시되거나, 클라이언트 측 라우팅 또는 병렬 라우트의 재렌더링 메커니즘이 모달 상호작용 후 제대로 작동하지 않기 때문일 수 있습니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >🛠️ 해결 방향</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >• Next.js가 인터셉팅 라우트가 활성화되고 나중에 닫힐 때 병렬 라우트의 렌더링 및 상태를 어떻게 관리하는지 조사합니다.<br/>• 특히 모달이 닫히고 다시 열린 후의 인터셉팅 라우트를 위한 클라이언트 측 라우팅 로직에 초점을 맞춥니다.<br/>• 오래된 배경 상태를 유지할 수 있는 캐싱 메커니즘이 있는지 확인합니다.<br/>• 모달 상호작용 후 재렌더링 시 배경 레이아웃/페이지 컴포넌트에 올바른 props와 context가 전달되는지 확인합니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >✅ 기준 적합성: medium</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >• 이슈 내용이 상세하게 잘 작성되어 있으며, 단계별 재현 과정이 매우 명확합니다.<br/>• 버그 재현을 위한 명확한 단계(재현 레포 링크 및 Vercel 배포 링크 포함)가 제공됩니다.<br/>• 이슈 내에 의심되는 소스코드의 정확한 위치는 특정되지 않았습니다.<br/>• 메인테이너의 확인이나 기여 요청 댓글은 없습니다.<br/>• 메인테이너가 직접 작성한 이슈가 아닙니다.<br/>• good first issue 라벨이 없으며, blocked나 wait-for-triage 라벨도 없습니다.<br/>• 이슈를 해결하는 PR이 아직 생성되지 않았습니다.</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:15px;font-weight:bold;line-height:1;text-align:left;color:#000000;\"\n      >🧗 기술적인 난이도: high</div>\n    \n                </td>\n              </tr>\n            \n              <tr>\n                <td\n                   align=\"left\" style=\"font-size:0px;padding:10px 25px;word-break:break-word;\"\n                >\n                  \n      <div\n         style=\"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#000000;\"\n      >• Next.js App Router의 고급 기능인 병렬 및 인터셉팅 라우트 내의 문제를 디버깅하는 것은 매우 복잡합니다.<br/>• 이러한 라우팅 패러다임이 UI 상태 및 렌더링을 관리하는 방식에 대한 깊은 이해가 필요합니다.<br/>• 해결책은 App Router의 클라이언트 측 렌더링 또는 상태 관리 메커니즘에 대한 핵심적인 변경을 요구할 수 있습니다.</div>\n    \n                </td>\n              </tr>\n            \n        </tbody>\n      </table>\n    \n      </div>\n    \n          <!--[if mso | IE]></td></tr></table><![endif]-->\n              </td>\n            </tr>\n          </tbody>\n        </table>\n        \n      </div>\n    \n      \n      <!--[if mso | IE]></td></tr></table></td></tr></table><![endif]-->\n              </td>\n            </tr>\n          </tbody>\n        </table>\n        \n      </div>\n    \n      \n      <!--[if mso | IE]></td></tr></table><![endif]-->\n    \n    \n      </div>\n    \n  </body>\n</html>\n  ",
-            "json": {
-              "file": ".",
-              "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-              "line": 2,
-              "includedIn": [],
-              "tagName": "mjml",
-              "children": [
-                {
-                  "file": ".",
-                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                  "line": 3,
-                  "includedIn": [],
-                  "tagName": "mj-body",
-                  "children": [
-                    {
-                      "file": ".",
-                      "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                      "line": 5,
-                      "includedIn": [],
-                      "tagName": "mj-section",
-                      "attributes": {
-                        "background-color": "#E9E9E9"
-                      },
-                      "children": [
-                        {
-                          "file": ".",
-                          "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                          "line": 6,
-                          "includedIn": [],
-                          "tagName": "mj-column",
-                          "children": [
-                            {
-                              "file": ".",
-                              "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                              "line": 7,
-                              "includedIn": [],
-                              "tagName": "mj-divider",
-                              "attributes": {}
-                            },
-                            {
-                              "file": ".",
-                              "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                              "line": 8,
-                              "includedIn": [],
-                              "tagName": "mj-image",
-                              "attributes": {
-                                "src": "https://lh3.googleusercontent.com/d/11VgJS7_uMNmlBLaiN9S68Nz-QWZIsLV4",
-                                "width": "500",
-                                "height": "150"
-                              }
-                            },
-                            {
-                              "file": ".",
-                              "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                              "line": 9,
-                              "includedIn": [],
-                              "tagName": "mj-divider",
-                              "attributes": {
-                                "border-width": "2px"
-                              }
-                            }
-                          ],
-                          "attributes": {}
-                        }
-                      ]
-                    },
-                    {
-                      "file": ".",
-                      "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                      "line": 13,
-                      "includedIn": [],
-                      "tagName": "mj-wrapper",
-                      "attributes": {
-                        "border": "1px solid #000000",
-                        "padding": "50px 30px"
-                      },
-                      "children": [
-                        {
-                          "file": ".",
-                          "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                          "line": 14,
-                          "includedIn": [],
-                          "tagName": "mj-section",
-                          "children": [
-                            {
-                              "file": ".",
-                              "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                              "line": 15,
-                              "includedIn": [],
-                              "tagName": "mj-column",
-                              "children": [
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 16,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "22px"
-                                  },
-                                  "content": "Failed to execute 'measure' on 'Performance': 'NotFound' cannot have a negative time stamp."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 17,
-                                  "includedIn": [],
-                                  "tagName": "mj-spacer",
-                                  "attributes": {}
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 18,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "🧾 이슈 내용"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 19,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "Next.js 개발 모드에서 존재하지 않는 페이지(/404)로 이동한 후, `[locale]/not-found.tsx` 파일을 수정하고 페이지를 여러 번 새로고침하면 'Failed to execute 'measure' on 'Performance': 'NotFound' cannot have a negative time stamp' 에러가 발생합니다. 이 버그는 재현 가능하지만 발생하는 시점이 다소 무작위적입니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 20,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "🧩 원인"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 21,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "Next.js의 fast refresh(HMR) 기능과 에러 페이지 렌더링 과정에서 Performance API 사용 간의 타이밍 문제 또는 경쟁 조건(race condition)으로 추정됩니다. 특히 `performance.measure` 호출 시 `NotFound` 마크의 시작 및 종료 시점 계산에 오류가 발생하여 음수 타임스탬프가 기록되는 것으로 보입니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 21,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "🛠️ 해결 방향"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 21,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "• Next.js의 `not-found.tsx` 렌더링 로직과 fast refresh 관련 코드, 특히 Performance API(`PerformanceObserver`, `performance.measure`) 호출 부분을 면밀히 검토합니다.<br/>• 성능 측정 마크(`NotFound`)의 생성 및 측정 로직을 추적하여, 재렌더링이나 특정 에러 시나리오에서도 시작 및 종료 마크가 항상 유효하고 올바른 순서로 기록되는지 확인합니다.<br/>• 음수 지속 시간 계산을 방지하거나, 측정 전에 필요한 성능 마크가 존재하는지 확인하는 방어적인 로직을 추가하는 것을 고려합니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 21,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "✅ 기준 적합성: medium"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 21,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "• 이슈 내용이 상세하게 잘 작성되어 있습니다.<br/>• 버그의 에러 메시지와 재현 가능한 명확한 단계(재현 레포 링크 포함)가 제공됩니다.<br/>• 이슈 내에 의심되는 소스코드의 정확한 위치는 특정되지 않았습니다.<br/>• 메인테이너의 확인이나 기여 요청 댓글은 없습니다.<br/>• 메인테이너가 직접 작성한 이슈가 아닙니다.<br/>• good first issue 라벨이 없으며, blocked나 wait-for-triage 라벨도 없습니다.<br/>• 이슈를 해결하는 PR이 아직 생성되지 않았습니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 21,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "🧗 기술적인 난이도: medium"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 21,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "• Next.js의 코어 개발 서버 로직, 특히 HMR과 Performance API 통합 방식을 이해해야 합니다.<br/>• 경쟁 조건과 같은 미묘한 타이밍 버그를 디버깅하는 것은 복잡할 수 있습니다.<br/>• 해결책은 Next.js 런타임 또는 개발 서버 코드의 깊은 부분을 수정해야 할 수도 있습니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 21,
-                                  "includedIn": [],
-                                  "tagName": "mj-divider",
-                                  "attributes": {
-                                    "border-width": "1px",
-                                    "border-color": "lightgrey"
-                                  }
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 21,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "22px"
-                                  },
-                                  "content": "`useTransition` stuck in loading state when using `router.refresh()` after calling a server action"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 22,
-                                  "includedIn": [],
-                                  "tagName": "mj-spacer",
-                                  "attributes": {}
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 23,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "🧾 이슈 내용"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 24,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "서버 액션 호출 후 `router.refresh()`를 사용할 때 `useTransition`이 로딩 상태에 갇히고 UI가 업데이트되지 않는 문제가 빌드된 Next.js 애플리케이션(프로덕션)에서 발생합니다. 개발 모드에서는 발생하지 않고, 재현 레포가 제공됩니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 25,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "🧩 원인"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 26,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "React의 `useTransition`, Next.js의 `router.refresh()` 및 서버 액션 간의 상호작용 문제로 추정됩니다. 특히 프로덕션 빌드 환경에서 `useTransition`의 pending 상태가 `router.refresh()` 완료 후 올바르게 해제되지 않거나, 하이드레이션 불일치, 직렬화 오류 또는 미묘한 타이밍 문제가 발생할 수 있습니다. 개발 모드와 프로덕션 빌드 간의 동작 차이가 원인일 가능성이 높습니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 26,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "🛠️ 해결 방향"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 26,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "• Next.js와 React의 소스 코드에서 `useTransition`, `router.refresh()`, 서버 액션 관련 부분을 조사하여 pending 상태 관리 및 해결 방식을 확인합니다.<br/>• 프로덕션 빌드에서 데이터 fetching, 캐싱, 또는 revalidation 로직이 transition 완료를 방해하는지 확인합니다.<br/>• 모든 React 훅과 Next.js API가 클라이언트와 서버 간에 상태를 올바르게 동기화하고 있는지 점검합니다.<br/>• `useTransition`이 pending 상태를 벗어나지 못하게 하는 미처리된 Promise 또는 비동기 작업이 있는지 확인합니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 26,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "✅ 기준 적합성: medium"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 26,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "• 이슈 내용이 상세하게 잘 작성되어 있습니다.<br/>• 버그 재현을 위한 명확한 단계(빌드/실행 지침 및 재현 레포 링크 포함)가 제공됩니다.<br/>• 이슈 내에 의심되는 소스코드의 정확한 위치는 특정되지 않았습니다.<br/>• 메인테이너의 확인이나 기여 요청 댓글은 없습니다.<br/>• 메인테이너가 직접 작성한 이슈가 아닙니다.<br/>• good first issue 라벨이 없으며, blocked나 wait-for-triage 라벨도 없습니다.<br/>• 이슈를 해결하는 PR이 아직 생성되지 않았습니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 26,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "🧗 기술적인 난이도: high"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 26,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "• React의 동시성 기능(`useTransition`), Next.js 클라이언트 라우터, 서버 액션 간의 복잡한 상호작용을 디버깅해야 합니다.<br/>• 프로덕션 전용 버그이기 때문에 디버깅 환경 설정 및 문제 격리가 어려울 수 있습니다.<br/>• React 렌더링 라이프사이클과 Next.js의 데이터 fetching/revalidation 메커니즘에 대한 깊은 이해가 필요합니다.<br/>• 해결책은 Next.js가 서버 액션 응답 및 클라이언트 측 업데이트를 조정하는 방식에 대한 근본적인 변경을 요구할 수 있습니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 26,
-                                  "includedIn": [],
-                                  "tagName": "mj-divider",
-                                  "attributes": {
-                                    "border-width": "1px",
-                                    "border-color": "lightgrey"
-                                  }
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 26,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "22px"
-                                  },
-                                  "content": "App Router routes return 404 when using Pages Router i18n with domain routing"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 27,
-                                  "includedIn": [],
-                                  "tagName": "mj-spacer",
-                                  "attributes": {}
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 28,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "🧾 이슈 내용"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 29,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "Pages Router의 i18n 도메인 라우팅을 구성했을 때, App Router 경로들이 404 에러를 반환합니다. 예를 들어, `http://nl.example.local:3000/` (Pages Router)는 작동하지만, `http://nl.example.local:3000/test` (App Router)는 404를 반환합니다. 이는 두 라우터가 도메인 i18n과 함께 사용될 때 라우팅 충돌 또는 설정 문제임을 나타냅니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 30,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "🧩 원인"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 31,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "Next.js가 Pages Router와 App Router가 모두 활성화된 상태에서 i18n 구성(특히 `next.config.js`의 도메인 기반 라우팅)을 처리하는 방식에 문제가 있는 것으로 보입니다. Pages Router용으로 설계된 i18n 설정이 App Router 경로에 올바르게 적용되지 않아, 특정 도메인에서 App Router 경로의 URL 해석 또는 라우팅이 실패하는 것으로 추정됩니다. Next.js가 요청을 적절한 라우터로 디스패치하는 과정에 버그가 있을 수도 있습니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 31,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "🛠️ 해결 방향"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 31,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "• Next.js의 라우팅 로직, 특히 `i18n` 설정이 `next.config.js`에 있을 때 Pages Router 경로와 App Router 경로를 어떻게 구별하는지 조사합니다.<br/>• 도메인 기반 i18n이 URL을 내부적으로 어떻게 접두사 처리하거나 재작성하는지, 그리고 이 로직이 두 라우터 유형 모두에 올바르게 적용되는지 확인합니다.<br/>• 내부 URL 파서에서 라우트 매칭 순서 또는 충돌이 있는지 점검합니다.<br/>• `i18n` 설정 처리 또는 라우팅 미들웨어를 업데이트하여 도메인 i18n이 포함된 하이브리드 App/Pages Router 설정을 올바르게 지원하도록 개선합니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 31,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "✅ 기준 적합성: medium"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 31,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "• 이슈 내용이 상세하게 잘 작성되어 있습니다.<br/>• 버그 재현을 위한 명확한 단계(재현 레포 링크 및 `/etc/hosts` 설정 지침 포함)가 제공됩니다.<br/>• 이슈 내에 의심되는 소스코드의 정확한 위치는 특정되지 않았습니다.<br/>• 메인테이너의 확인이나 기여 요청 댓글은 없습니다.<br/>• 메인테이너가 직접 작성한 이슈가 아닙니다.<br/>• good first issue 라벨이 없으며, blocked나 wait-for-triage 라벨도 없습니다.<br/>• 이슈를 해결하는 PR이 아직 생성되지 않았습니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 31,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "🧗 기술적인 난이도: high"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 31,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "• Next.js의 듀얼 라우터 아키텍처, i18n 구현, 그리고 URL 파싱/매칭 로직에 대한 깊은 이해가 필요합니다.<br/>• 도메인 기반 설정에서 라우팅 충돌을 디버깅하는 것은 매우 복잡할 수 있습니다.<br/>• 해결책은 코어 라우팅 메커니즘 또는 설정 파싱 방식에 대한 변경을 요구할 수 있습니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 31,
-                                  "includedIn": [],
-                                  "tagName": "mj-divider",
-                                  "attributes": {
-                                    "border-width": "1px",
-                                    "border-color": "lightgrey"
-                                  }
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 31,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "22px"
-                                  },
-                                  "content": "Intercepting route modal shows stale background after first open/close in production (App Router + parallel routes)"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 32,
-                                  "includedIn": [],
-                                  "tagName": "mj-spacer",
-                                  "attributes": {}
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 33,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "🧾 이슈 내용"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 34,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "App Router와 병렬/인터셉팅 라우트를 사용하는 Next.js 프로덕션 빌드에서, 인터셉팅 라우트 모달을 처음 열고 닫은 후 다시 열면 배경 페이지가 이전 상태(예: `/dark/discover` 대신 `/dark/chat`)로 고정되어 나타나는 문제가 발생합니다. 이는 모달을 다시 열었을 때 배경 상태 보존 또는 재렌더링에 문제가 있음을 시사합니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 35,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "🧩 원인"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 36,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "Next.js App Router가 병렬 라우트와 인터셉팅 세그먼트의 상태를 관리하는 방식, 특히 프로덕션 환경에서 발생하는 문제로 추정됩니다. 인터셉팅 라우트가 열렸다가 닫힌 후, 배경 라우트의 상태가 올바르게 복원되거나 재렌더링되지 않는 것 같습니다. 이는 배경 컴포넌트나 데이터가 잘못 캐시되거나, 클라이언트 측 라우팅 또는 병렬 라우트의 재렌더링 메커니즘이 모달 상호작용 후 제대로 작동하지 않기 때문일 수 있습니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 36,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "🛠️ 해결 방향"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 36,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "• Next.js가 인터셉팅 라우트가 활성화되고 나중에 닫힐 때 병렬 라우트의 렌더링 및 상태를 어떻게 관리하는지 조사합니다.<br/>• 특히 모달이 닫히고 다시 열린 후의 인터셉팅 라우트를 위한 클라이언트 측 라우팅 로직에 초점을 맞춥니다.<br/>• 오래된 배경 상태를 유지할 수 있는 캐싱 메커니즘이 있는지 확인합니다.<br/>• 모달 상호작용 후 재렌더링 시 배경 레이아웃/페이지 컴포넌트에 올바른 props와 context가 전달되는지 확인합니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 36,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "✅ 기준 적합성: medium"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 36,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "• 이슈 내용이 상세하게 잘 작성되어 있으며, 단계별 재현 과정이 매우 명확합니다.<br/>• 버그 재현을 위한 명확한 단계(재현 레포 링크 및 Vercel 배포 링크 포함)가 제공됩니다.<br/>• 이슈 내에 의심되는 소스코드의 정확한 위치는 특정되지 않았습니다.<br/>• 메인테이너의 확인이나 기여 요청 댓글은 없습니다.<br/>• 메인테이너가 직접 작성한 이슈가 아닙니다.<br/>• good first issue 라벨이 없으며, blocked나 wait-for-triage 라벨도 없습니다.<br/>• 이슈를 해결하는 PR이 아직 생성되지 않았습니다."
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 36,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "15px",
-                                    "font-weight": "bold"
-                                  },
-                                  "content": "🧗 기술적인 난이도: high"
-                                },
-                                {
-                                  "file": ".",
-                                  "absoluteFilePath": "/Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows",
-                                  "line": 36,
-                                  "includedIn": [],
-                                  "tagName": "mj-text",
-                                  "attributes": {
-                                    "font-size": "14px",
-                                    "line-height": "1.6"
-                                  },
-                                  "content": "• Next.js App Router의 고급 기능인 병렬 및 인터셉팅 라우트 내의 문제를 디버깅하는 것은 매우 복잡합니다.<br/>• 이러한 라우팅 패러다임이 UI 상태 및 렌더링을 관리하는 방식에 대한 깊은 이해가 필요합니다.<br/>• 해결책은 App Router의 클라이언트 측 렌더링 또는 상태 관리 메커니즘에 대한 핵심적인 변경을 요구할 수 있습니다."
-                                }
-                              ],
-                              "attributes": {}
-                            }
-                          ],
-                          "attributes": {}
-                        }
-                      ]
-                    }
-                  ],
-                  "attributes": {}
-                }
-              ],
-              "attributes": {}
-            },
-            "errors": [
-              {
-                "line": 8,
-                "message": "Attribute width has invalid value: 500 for type Unit, only accepts (px) units and 1 value(s)",
-                "tagName": "mj-image",
-                "formattedMessage": "Line 8 of /Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows (mj-image) — Attribute width has invalid value: 500 for type Unit, only accepts (px) units and 1 value(s)"
-              },
-              {
-                "line": 8,
-                "message": "Attribute height has invalid value: 150 for type Unit, only accepts (px, auto) units and 1 value(s)",
-                "tagName": "mj-image",
-                "formattedMessage": "Line 8 of /Users/chaeyunhui/Projects/Javascript/n8n-issue-collector/.github/workflows (mj-image) — Attribute height has invalid value: 150 for type Unit, only accepts (px, auto) units and 1 value(s)"
-              }
-            ]
-          }
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.0-flash-exp:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        528,
+        880
+      ],
+      "id": "5166ae3b-ef00-4bb5-8e9a-cb2608d6588d",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "openRouterApi",
+          "name": "OpenRouter account"
         }
       }
-    ]
-  },
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.markdown_list }}\n\nGenerate a YAML object that matches the TypeScript type $IssueCollection below:\nEach YAML output MUST be after a newline, indented, with block scalar indicator ('|').\n\ntype Level = \"high\" | \"medium\" | \"low\";\n\ninterface LevelWithReasons {\n  level: Level;\n  reasons: string[];\n}\n\ninterface Issue {\n  issueTitle: string;\n  issueDescription: string;\n  rootCause: string;\n  resolutionApproach: string[];\n  complianceWithStandards: LevelWithReasons;\n  technicalDifficulty: LevelWithReasons;\n}\n\ninterface IssueCollection {\n  issues: Issue[];\n}\n\n------------\nExample output:\nissues:\n  - issueTitle: |\n      ...\n    issueDescription: |\n      ...\n    rootCause: |\n      ...\n    resolutionApproach: |\n      ...\n    complianceWithStandards:\n      level: \"medium\"\n      reasons: |\n        ...\n    technicalDifficulty:\n      level: \"high\"\n      reasons: |\n        ...",
+        "needsFallback": true,
+        "options": {
+          "systemMessage": "=너는 오픈소스에 기여하려는 오픈소스 기여 경험이 많은 10년차 개발자야.\n\n아래 이슈들을 검색해서 내용을 읽어보고 밑의 기여하기 좋은 기준에 맞게 분류해줘.\n이슈들이 있는 url은 https://github.com/{{ $('Code in JavaScript').first().json.repo}}/issues 이야.\n이슈를 분류할땐 이슈 내용, 원인, 해결방향과 기준에 얼마나 잘 맞는지(상,중,하), 기술적인 난이도 (상,중,하) 로 평가해줘.\n\n[기여하기 좋은 이슈 기준]\n이슈의 내용이 상세하게 잘 작성되어 있는 경우 \n이슈의 내용 안에 버그나 에러의 로그와 재현할 수 있는 방법이 명시되어 있는 경우 \n이슈 내에 의심되는 소스코드의 위치가 제보자나 메인테이너에 의해 특정된 경우 \n메인테이너가 이슈의 내용을 확인하고 문제가 맞아서 방향을 정해주거나 기여 해달라고 한 경우 \n메인테이너가 직접 작성한 이슈\n이슈의 라벨에 good first issue 가 달려있고, blocked 나 wait-for-triage가 없는 이슈 \n이슈를 해결하는 PR이 아직 생성되지 않은 이슈 (누군가가 PR을 만들겠다고만 말하고 PR이 아직 생성 안된건 상관 없음)\n\n위의 기준에 잘 맞는 이슈일수록 상세하게 설명하고 강조해줘.\n위의 기준에 안맞는 이슈는 요약할 필요 없어.\n\nGenerate a YAML object that matches the TypeScript type $IssueCollection below:\nEach YAML output MUST be after a newline, indented, with block scalar indicator ('|').\n\ntype Level = \"high\" | \"medium\" | \"low\";\n\ninterface LevelWithReasons {\n  level: Level;\n  reasons: string[];\n}\n\ninterface Issue {\n  issueTitle: string;\n  issueDescription: string;\n  rootCause: string;\n  resolutionApproach: string[];\n  complianceWithStandards: LevelWithReasons;\n  technicalDifficulty: LevelWithReasons;\n}\n\ninterface IssueCollection {\n  issues: Issue[];\n}\n\n------------\nExample output:\nissues:\n  - issueTitle: |\n      ...\n    issueDescription: |\n      ...\n    rootCause: |\n      ...\n    resolutionApproach: |\n      ...\n    complianceWithStandards:\n      level: \"medium\"\n      reasons: |\n        ...\n    technicalDifficulty:\n      level: \"high\"\n      reasons: |\n        ...",
+          "batching": {
+            "delayBetweenBatches": 2
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        640,
+        656
+      ],
+      "id": "9ca0496b-9938-466b-b159-164f72a2bc24",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "qwen/qwen3-coder:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        672,
+        880
+      ],
+      "id": "15339e92-4499-477d-97f8-8e146ef207a1",
+      "name": "OpenRouter Chat Fallback Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "openRouterApi",
+          "name": "OpenRouter account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
   "connections": {
     "Loop Over Items": {
       "main": [
@@ -1040,18 +343,7 @@
       "main": [
         [
           {
-            "node": "Message a model",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Message a model": {
-      "main": [
-        [
-          {
-            "node": "parse YAML",
+            "node": "AI Agent",
             "type": "main",
             "index": 0
           }
@@ -1106,9 +398,42 @@
       "main": [
         [
           {
-            "node": "Send an email1",
+            "node": "Send an email",
             "type": "main",
             "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "parse YAML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Fallback Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 1
           }
         ]
       ]
@@ -1118,7 +443,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "c3ac2a0c-0222-442a-967a-04e2cde622b9",
+  "versionId": "62cc40bc-cf12-4133-ba6d-6e924ad8f208",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "c4eb748d1201f6efcf3fb4abe55ad9f6c4623960d681ba4f9bd76fc5b7ea8d40"
