@@ -44,12 +44,21 @@ jobs:
                 "data": {
                     "apiToken": "${{ secrets.MAILTRAP_API_TOKEN }}"
                 }
+              },
+              {
+                "id": "httpHeaderAuth",
+                "name": "Header Auth account",
+                "type": "httpHeaderAuth",
+                "data": {
+                    "name": "Authorization",
+                    "value": "Bearer ${{ secrets.N8N_GITHUB_API_KEY }}"
+                }
               }
           ] 
           EOF
           npx n8n import:credentials --input="cred.json"
           echo $PWD
           ln -sf $PWD/community_nodes ~/.n8n/nodes
-          npx n8n import:workflow --input="./.github/workflows/test.json"
+          npx n8n import:workflow --input="./.github/workflows/n8n.json"
           WORKFLOW_ID=$(sqlite3 ~/.n8n/database.sqlite "SELECT id FROM workflow_entity ORDER BY createdAt DESC LIMIT 1;")
           npx n8n execute workflow --id $WORKFLOW_ID
