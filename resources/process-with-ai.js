@@ -2,8 +2,8 @@ const userPrompt = `
     {{ $json.markdown_list }}
 
     Generate a YAML object that matches the TypeScript type $IssueCollection below:
-    (You MUST wrap every YAML list item in double quotes. This rule is STRICT and cannot be violated)
-
+    (You MUST wrap every YAML list item in double quotes. If the string contains a double quote ("), escape it using a backslash (\").)
+    
     type Level = "high" | "medium" | "low";
 
     interface LevelWithReasons {
@@ -36,7 +36,7 @@ const userPrompt = `
         rootCause: |
         ...
         resolutionApproach:
-        - "..."
+        - "\"...\""
         complianceWithStandards:
         level: "medium"
         reasons:
@@ -67,8 +67,8 @@ const systemPrompt = `
     위의 기준에 안맞는 이슈는 요약할 필요 없어.
 
     Generate a YAML object that matches the TypeScript type $IssueCollection below:
-    (You MUST wrap every YAML list item in double quotes. This rule is STRICT and cannot be violated)
-
+    (You MUST wrap every YAML list item in double quotes. If the string contains a double quote ("), escape it using a backslash (\"). This rule is STRICT and cannot be violated)
+    
     type Level = "high" | "medium" | "low";
 
     interface LevelWithReasons {
@@ -101,7 +101,7 @@ const systemPrompt = `
         rootCause: |
         ...
         resolutionApproach:
-        - "..."
+        - "\"...\""
         complianceWithStandards:
         level: "medium"
         reasons:
