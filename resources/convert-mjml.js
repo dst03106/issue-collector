@@ -10,25 +10,25 @@ const convertMJML = function() {
     for (const issue of $input.first().json.issues) {
         let issueInfo = `<mj-text mj-class="issue-title">${issue.issueTitle}</mj-text>
                         <mj-spacer/>
-                        <mj-text mj-class="section-title">🧾 이슈 내용</mj-text>
+                        <mj-text mj-class="section-title">🧾 Issue Description</mj-text>
                         <mj-text mj-class="section-content">${issue.issueDescription}</mj-text>
-                        <mj-text mj-class="section-title">🧩 원인</mj-text>
+                        <mj-text mj-class="section-title">🧩 Root Cause</mj-text>
                         <mj-text mj-class="section-content">${issue.rootCause}</mj-text>`;
-        let resolutionApproach = `<mj-text mj-class="section-title">🛠️ 해결 방향</mj-text><mj-text font-size="14px" line-height="1.6">`;
+        let resolutionApproach = `<mj-text mj-class="section-title">🛠️ Resolution Approach</mj-text><mj-text font-size="14px" line-height="1.6">`;
         resolutionApproach += createBulletedList(issue.resolutionApproach);
         resolutionApproach += '</mj-text>';
         
-        let complianceWithStandards = `<mj-text mj-class="section-title">✅ 기준 적합성: ${issue.complianceWithStandards.level}</mj-text><mj-text font-size="14px" line-height="1.6">`
-        complianceWithStandards += createBulletedList(issue.complianceWithStandards.reasons);
-        complianceWithStandards += '</mj-text>';
+        let issueSuitability = `<mj-text mj-class="section-title">✅ Issue Suitability: ${issue.issueSuitability.level}</mj-text><mj-text font-size="14px" line-height="1.6">`
+        issueSuitability += createBulletedList(issue.issueSuitability.reasons);
+        issueSuitability += '</mj-text>';
         
-        let technicalDifficulty = `<mj-text mj-class="section-title">🧗 기술적인 난이도: ${issue.technicalDifficulty.level}</mj-text><mj-text font-size="14px" line-height="1.6">`
+        let technicalDifficulty = `<mj-text mj-class="section-title">🧗 Technical Difficulty: ${issue.technicalDifficulty.level}</mj-text><mj-text font-size="14px" line-height="1.6">`
         technicalDifficulty += createBulletedList(issue.technicalDifficulty.reasons);
         technicalDifficulty += '</mj-text>';
 
-        let issuelink = `<mj-text mj-class="section-title"><p>👉 이슈 보러가기 <a href="${issue.issueURL}">(링크)</a></p></mj-text>`;
+        let issuelink = `<mj-text mj-class="section-title"><p>👉 Go to Issue <a href="${issue.issueURL}">(Link)</a></p></mj-text>`;
 
-        issues.push(issueInfo + resolutionApproach + complianceWithStandards + technicalDifficulty + issuelink)
+        issues.push(issueInfo + resolutionApproach + issueSuitability + technicalDifficulty + issuelink)
     }
 
     return {

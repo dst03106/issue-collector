@@ -28,6 +28,7 @@ jobs:
           NODE_FUNCTION_ALLOW_EXTERNAL: "yaml,mjml"
           OPENROUTER_MODEL: "google/gemini-2.0-flash-exp:free"
           OPENROUTER_FALLBACK_MODEL: "qwen/qwen3-coder:free"
+          TRANSLATION_LANGUAGE: ${{ vars.TRANSLATION_LANGUAGE || 'en-US' }}
           REPO: ${{ vars.REPO }}
           EMAIL: ${{ vars.EMAIL }}
         run: |
