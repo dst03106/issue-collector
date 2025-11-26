@@ -36,6 +36,15 @@ const inputSchema = `{
             },
             "summary": {
             "type": "string"
+            },
+            "keyword": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+            },
+            "analogy": {
+            "type": "string"
             }
         },
         "required": [

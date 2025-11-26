@@ -23,22 +23,16 @@ const systemPrompt = `
     1. Parse the issue’s title and body from the \`question\` field.
     2. Construct a single string for the \`question\` field of the tool call. It MUST include the issue title, body, and a request for guidance. Use this exact template:
 
-         "Here is a GitHub issue.\n         Title: {issueTitle}\n         Body: {issueBody}\n         How can this issue be resolved, what is its root cause, what is the recommended resolution approach, and what is the technical difficulty? Also, what related repository documentation should be referenced?"
+         "Here is a GitHub issue.\n         Title: {issueTitle}\n         Body: {issueBody}\n         How can this issue be resolved, what is its root cause, what is the recommended resolution approach, what is the technical difficulty, and what is a simple analogy for the issue and its resolution approach?"
 
     3. Call the deepwiki \`ask_question\` tool with an **object** containing:
          - repoName: string
          - question: string (constructed from step 2)
-         
-         Example of correct tool input:
-         {
-             "repoName": "owner/repo",
-             "question": "Here is a GitHub issue.\nTitle: ...\nBody: ...\nHow can this issue be resolved, what is its root cause, what is the recommended resolution approach, and what is the technical difficulty? Also, what related documentation should be referenced?"
-         }
-
     4. Never include an object inside the \`question\` field. It MUST always be a single string.
     5. Base your final answer ONLY on the returned tool response.
     6. Generate a single YAML object that matches the TypeScript type \`Issue\` below.
     7. Add a brief, one-sentence summary of the contribution in the \`summary\` field.
+    8. For the \`keyword\` field, provide 1 to 5 highly relevant keywords related to the issue.
 
     Rules:
     - Do not include markdown code blocks in the output. (e.g., do not use \`\`\`python... \`\`\`.)
@@ -59,6 +53,8 @@ const systemPrompt = `
         resolutionApproach: string[];
         technicalDifficulty: LevelWithReasons;
         summary: string;
+        keyword: string[];
+        analogy: string;
     }
 
     ------------
@@ -76,6 +72,10 @@ const systemPrompt = `
       reasons:
         - "..."
     summary: "..."
+    keyword:
+      - "..."
+      - "..."
+    analogy: "..."
 `
  
 

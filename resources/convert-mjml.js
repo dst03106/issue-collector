@@ -19,6 +19,10 @@ const convertMJML = function() {
     for (const issue of $('Merge').all()) {
         let issueInfo = `<mj-text mj-class="issue-title">${issue.json.issueTitle}</mj-text>
                         <mj-spacer/>
+                        <mj-text mj-class="section-title">🔑 Keywords</mj-text>
+                        <mj-text mj-class="section-content">${issue.json.output.keyword.join(', ')}</mj-text>
+                        <mj-text mj-class="section-title">🔄 Analogy</mj-text>
+                        <mj-text mj-class="section-content">${issue.json.output.analogy}</mj-text>
                         <mj-text mj-class="section-title">🧾 Issue Description</mj-text>
                         <mj-text mj-class="section-content">${issue.json.issueDescription}</mj-text>
                         <mj-text mj-class="section-title">🧩 Root Cause</mj-text>
@@ -26,6 +30,7 @@ const convertMJML = function() {
         let resolutionApproach = `<mj-text mj-class="section-title">🛠️ Resolution Approach</mj-text><mj-text font-size="14px" line-height="1.6">`;
         resolutionApproach += createBulletedList(issue.json.output.resolutionApproach);
         resolutionApproach += '</mj-text>';
+
         
         let issueSuitability = `<mj-text mj-class="section-title">✅ Issue Suitability: ${issue.json.issueSuitability.level}</mj-text><mj-text font-size="14px" line-height="1.6">`
         issueSuitability += createBulletedList(issue.json.issueSuitability.reasons);
