@@ -1,6 +1,7 @@
 **/node_modules/**
-.vscode/*
 tmp/*
 TODO.md
+payload.json
+.vscode/*
 .DS_Store
 .env

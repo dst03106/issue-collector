@@ -1,7 +1,7 @@
 const { execFile } = require('child_process');
 
 function executeWorkflow({
-	transaction_language,
+	translation_language,
 	repo,
 	email,
 	openrouter_api_key,
@@ -13,7 +13,7 @@ function executeWorkflow({
 			...process.env,
 			N8N_LOG_LEVEL: "error",
 			NODE_FUNCTION_ALLOW_EXTERNAL: "mjml",
-			TRANSLATION_LANGUAGE: transaction_language,
+			TRANSLATION_LANGUAGE: translation_language,
 			REPO: repo,
 			EMAIL: email,
 			OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || openrouter_api_key,
@@ -35,8 +35,9 @@ function executeWorkflow({
 }
 
 exports.handler = async (event) => {
+	console.log(event);
 	const config = {
-		transaction_language: event.transaction_language,
+		translation_language: event.translation_language,
 		repo: event.repo,
 		email: event.email,
 		openrouter_api_key: event.openrouter_api_key,
@@ -45,7 +46,7 @@ exports.handler = async (event) => {
 	};
 	await executeWorkflow(config)
     .then(result => console.log(result))
-    .catch(({ error, stderr, stdout}) => {
+    .catch(({ error, stderr, stdout }) => {
 			if (stdout) console.log(`[STDOUT] ${stdout}`);
 			if (stderr) console.error(`[STDERR] ${stderr}`); 
 			if (error) console.error(`[EXEC ERROR] ${error.message}`);
