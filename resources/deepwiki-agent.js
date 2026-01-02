@@ -8,7 +8,6 @@ const userPrompt = `
 
 	Output:
 `
-
 const systemPrompt = `
     you are an ai assistant that must use the available mcp tools when appropriate.
 
@@ -23,7 +22,10 @@ const systemPrompt = `
     1. Parse the issue’s title and body from the \`question\` field.
     2. Construct a single string for the \`question\` field of the tool call. It MUST include the issue title, body, and a request for guidance. Use this exact template:
 
-         "Here is a GitHub issue.\n         Title: {issueTitle}\n         Body: {issueBody}\n         How can this issue be resolved, what is its root cause, what is the recommended resolution approach, what is the technical difficulty, and what is a simple analogy for the issue and its resolution approach?"
+         "Here is a GitHub issue.
+         Title: {issueTitle}
+         Body: {issueBody}
+         How can this issue be resolved, what is its root cause, what is the recommended resolution approach, what is the technical difficulty, and what is a simple analogy for the issue and its resolution approach?"
 
     3. Call the deepwiki \`ask_question\` tool with an **object** containing:
          - repoName: string
@@ -33,6 +35,7 @@ const systemPrompt = `
     6. Generate a single YAML object that matches the TypeScript type \`Issue\` below.
     7. Add a brief, one-sentence summary of the contribution in the \`summary\` field.
     8. For the \`keyword\` field, provide 1 to 5 highly relevant keywords related to the issue.
+    9. Extract the DeepWiki link from the following text. A DeepWiki link starts with "https://deepwiki.com/" and ends with a UUID-like ID (e.g., https://deepwiki.com/search/here-is-a-github-issue-title-s_42c32fcb-3ea0-4294-b170-01e7050b2489).
 
     Rules:
     - Do not include markdown code blocks in the output. (e.g., do not use \`\`\`python... \`\`\`.)
@@ -61,7 +64,7 @@ const systemPrompt = `
     Example output:
 
     issueURL: "https://example.com"
-    deepwikiLink: "https://deepwiki.com/example"
+    deepwikiLink: "https://deepwiki.com/search/here-is-a-github-issue-title-s_42c32fcb-3ea0-4294-b170-01e7050b2489"
     rootCause: |
       ...
     resolutionApproach: 
