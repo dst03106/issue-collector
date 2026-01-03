@@ -25,10 +25,10 @@ function executeWorkflow({
 	};
 	return new Promise((resolve, reject) => {
 		execFile('./scripts/entrypoint.sh', [], options, (error, stdout, stderr) => {
-			if (stderr) {
+			if (stderr || error) {
 				reject({ error, stderr, stdout });
 			} else {
-				resolve(stdout);
+				resolve({ error, stderr, stdout }); 
 			}
 		});
 	});
@@ -45,7 +45,11 @@ exports.handler = async (event) => {
 		google_app_password: event.google_app_password
 	};
 	await executeWorkflow(config)
-    .then(result => console.log(result))
+		.then(({ error, stderr, stdout }) => {
+			if (stdout) console.log(`[STDOUT] ${stdout}`);
+			if (stderr) console.error(`[STDERR] ${stderr}`); 
+			if (error) console.error(`[EXEC ERROR] ${error.message}`);
+		})
     .catch(({ error, stderr, stdout }) => {
 			if (stdout) console.log(`[STDOUT] ${stdout}`);
 			if (stderr) console.error(`[STDERR] ${stderr}`); 
