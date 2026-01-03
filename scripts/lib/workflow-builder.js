@@ -1,8 +1,6 @@
-const os = require('os');
 const fs = require('fs');
 const path = require('path');
 
-const tmpDir = os.tmpdir(); 
 /**
  * 노드 이름을 kebab-case로 변환
  * @param {string} name - 변환할 노드 이름
@@ -17,10 +15,10 @@ function toKebabCase(name) {
 
 /**
  * resources 폴더의 모든 파일을 읽어서 Map으로 반환
- * @returns {Map<string, string>} 파일명(확장자 제외) -> 파일 내용
+ * @param {string} resourcesDir - resources 디렉토리 경로
+ * @returns {Map<string, any>} 파일명(확장자 제외) -> 파일 내용
  */
-function readResourceFiles() {
-  const resourcesDir = path.join(__dirname, '../resources');
+function readResourceFiles(resourcesDir) {
   const resourceMap = new Map();
 
   try {
@@ -66,58 +64,67 @@ function readResourceFiles() {
 
 /**
  * workflow를 빌드하는 메인 함수
+ * @param {Object} config - 빌드 설정
+ * @param {string} config.workflowPath - n8n.json 파일 경로
+ * @param {string} config.resourcesDir - resources 디렉토리 경로
+ * @param {string} config.outputPath - workflow.json 출력 경로
+ * @returns {Object} 빌드 결과
  */
-function buildWorkflow() {
+function buildWorkflow(config) {
+  const { workflowPath, resourcesDir, outputPath } = config;
+  
   console.log('🔨 n8n workflow 빌드를 시작합니다...\n');
 
-  const workflowPath = path.join(__dirname, '../n8n.json');
-  
   if (!fs.existsSync(workflowPath)) {
-    console.error('❌ n8n.json 파일을 찾을 수 없습니다:', workflowPath);
-    process.exit(1);
+    const error = `❌ n8n.json 파일을 찾을 수 없습니다: ${workflowPath}`;
+    console.error(error);
+    return { success: false, error };
   }
 
-  const workflowContent = fs.readFileSync(workflowPath, 'utf8');
-  const workflow = JSON.parse(workflowContent);
-
-  // 2. 리소스 파일들 읽기
-  const resourceMap = readResourceFiles();
-
-  if (resourceMap.size === 0) {
-    console.warn('⚠️  리소스 파일이 없습니다. 원본 workflow를 그대로 출력합니다.');
-  }
-
-  // 3. 각 노드 순회하며 빈 필드 채우기
-  let updatedCount = 0;
-  
-  for (const node of workflow.nodes || []) {
-    const nodeName = node.name;
-    const kebabName = toKebabCase(nodeName);
-   
-    if (node.parameters && resourceMap.has(kebabName)) {
-        const resourceContent = resourceMap.get(kebabName);
-        node.parameters = resourceContent;
-        console.log(`  ✓ "${nodeName}" 노드의 파라미터를 업데이트했습니다. (${kebabName})`);
-        updatedCount++;
-    }
-  }
-
-  // 4. workflow.json으로 출력
-  const outputPath = path.join(tmpDir, 'workflow.json');
-  fs.writeFileSync(outputPath, JSON.stringify(workflow, null, 2), 'utf8');
-
-  console.log(`\n✅ 빌드 완료!`);
-  console.log(`   - ${updatedCount}개의 노드를 업데이트했습니다.`);
-  console.log(`   - 결과: ${outputPath}`);
-}
-
-// 스크립트 실행
-if (require.main === module) {
   try {
-    buildWorkflow();
+    const workflowContent = fs.readFileSync(workflowPath, 'utf8');
+    const workflow = JSON.parse(workflowContent);
+
+    // 리소스 파일들 읽기
+    const resourceMap = readResourceFiles(resourcesDir);
+
+    if (resourceMap.size === 0) {
+      console.warn('⚠️  리소스 파일이 없습니다. 원본 workflow를 그대로 출력합니다.');
+    }
+
+    // 각 노드 순회하며 빈 필드 채우기
+    let updatedCount = 0;
+    
+    for (const node of workflow.nodes || []) {
+      const nodeName = node.name;
+      const kebabName = toKebabCase(nodeName);
+     
+      if (node.parameters && resourceMap.has(kebabName)) {
+          const resourceContent = resourceMap.get(kebabName);
+          node.parameters = resourceContent;
+          console.log(`  ✓ "${nodeName}" 노드의 파라미터를 업데이트했습니다. (${kebabName})`);
+          updatedCount++;
+      }
+    }
+
+    // workflow.json으로 출력
+    fs.writeFileSync(outputPath, JSON.stringify(workflow, null, 2), 'utf8');
+
+    console.log(`\n✅ 빌드 완료!`);
+    console.log(`   - ${updatedCount}개의 노드를 업데이트했습니다.`);
+    console.log(`   - 결과: ${outputPath}`);
+
+    return { 
+      success: true, 
+      outputPath, 
+      updatedCount 
+    };
   } catch (error) {
-    console.error('❌ 빌드 중 오류 발생:', error);
-    process.exit(1);
+    console.error('❌ 빌드 중 오류 발생:', error.message);
+    return { 
+      success: false, 
+      error: error.message 
+    };
   }
 }
 
