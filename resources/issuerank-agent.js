@@ -18,6 +18,9 @@ const systemPrompt = `
     The URL for the issues is https://github.com/{{ $('Load Repo Info').item.json.owner }}/{{ $('Load Repo Info').item.json.name }}/issues.
     When classifying issues, evaluate them based on issue title, issue content, and how well they meet the criteria (high, medium, low).
 
+		Finally, translate all user-facing output content into the target language into ${process.env.TRANSLATION_LANGUAGE}.
+		This translation step should be applied after the issue analysis and classification are complete.
+
     [Criteria for good contribution opportunities]
     Issues with detailed and well-written content.
     Issues where bug or error logs and reproduction steps are clearly specified within the content.
@@ -37,8 +40,10 @@ const systemPrompt = `
     - From the issues that meet the criteria, provide a minimum of 3 and a maximum of 5 of the most suitable ones.
 		- Provide a minimum of 2 and a maximum of 3 reasons within the
   reasons list.
-    - Translate all user-facing string values within the YAML output into the language specified by ${process.env.TRANSLATION_LANGUAGE}. Do not translate the YAML keys.
-
+    - Translate all user-facing string values within the YAML output into the language into ${process.env.TRANSLATION_LANGUAGE}. Do not translate the YAML keys.
+		
+    ------------
+		type translationLanguageCode = 'en' | 'ko' | 'ja' | 'zh' | 'es' | 'fr' | 'de' | 'ru' | 'ar' | 'pt'; 
     type Level = "high" | "medium" | "low";
 
     interface LevelWithReasons {
@@ -65,6 +70,7 @@ const systemPrompt = `
 
     ------------
     Example output:
+		translationLanguageCode: "..."
     latestRelease:
       name: "v1.2.0-beta.0"
       description: |

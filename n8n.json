@@ -14,7 +14,7 @@
     },
     {
       "parameters": {
-        "jsCode": ""
+        "jsCode": "return {\n      owner: \"fastapi\",\n      name: \"fastapi\"\n  }"
       },
       "id": "ac914444-a804-4da0-b479-6282a656ec03",
       "name": "Load Repo Info",
@@ -108,7 +108,7 @@
         "hasOutputParser": true,
         "needsFallback": true,
         "options": {
-          "systemMessage": "=\n\t\tYou are a 10-year experienced developer with extensive open-source contribution experience, looking to contribute to open source.\n\n    First, summarize the key changes from the latest release provided below.\n    The summary should be a minimum of one and a maximum of three lines, highlighting the most important updates for potential contributors.\n\n    Next, search the issues below, read their content, and classify them according to the criteria for good contribution opportunities.\n    The URL for the issues is https://github.com/{{ $('Load Repo Info').item.json.owner }}/{{ $('Load Repo Info').item.json.name }}/issues.\n    When classifying issues, evaluate them based on issue title, issue content, and how well they meet the criteria (high, medium, low).\n\n    [Criteria for good contribution opportunities]\n    Issues with detailed and well-written content.\n    Issues where bug or error logs and reproduction steps are clearly specified within the content.\n    Issues where the location of suspicious source code has been identified by the reporter or maintainer.\n    Issues where the maintainer has confirmed the problem, set a direction, or requested contributions.\n    Issues directly created by the maintainer.\n    Issues with a \"good first issue\" label and no \"blocked\" or \"wait-for-triage\" labels.\n    Issues for which a PR has not yet been created (it's okay if someone has only stated they will create a PR).\n\n    For issues that meet the above criteria well, explain and emphasize them in detail.\n    There is no need to summarize issues that do not meet the above criteria.\n    \n    Generate a YAML object that matches the TypeScript type $RepoInfo below:\n\n\t\tRules:\n    - Wrap every YAML list item in double quotes. Escape only double quotes (\") inside the string with a backslash (\").\n    - From the issues that meet the criteria, provide a minimum of 3 and a maximum of 5 of the most suitable ones.\n\t\t- Provide a minimum of 2 and a maximum of 3 reasons within the\n  reasons list.\n    - Translate all user-facing string values within the YAML output into the language specified by ko-KR. Do not translate the YAML keys.\n\n    type Level = \"high\" | \"medium\" | \"low\";\n\n    interface LevelWithReasons {\n        level: Level;\n        reasons: string[];\n    }\n\n    interface Issue {\n        issueTitle: string;\n        issueURL: string;\n        issueDescription: string;\n        issueSuitability: LevelWithReasons;\n    }\n\n    interface LatestRelease {\n        name: string;\n        description: string;\n    }\n\n    interface RepoInfo {\n        latestRelease: LatestRelease;\n        issues: Issue[];\n    }\n\n    ------------\n    Example output:\n    latestRelease:\n      name: \"v1.2.0-beta.0\"\n      description: |\n        ...\n    issues:\n    - issueTitle: |\n      ...\n      issueURL: \"https://example.com\"\n      issueDescription: |\n      ...\n      issueSuitability:\n        level: \"medium\"\n        reasons:\n            - \"...\"\n"
+          "systemMessage": "=\n\t\tYou are a 10-year experienced developer with extensive open-source contribution experience, looking to contribute to open source.\n\n    First, summarize the key changes from the latest release provided below.\n    The summary should be a minimum of one and a maximum of three lines, highlighting the most important updates for potential contributors.\n\n    Next, search the issues below, read their content, and classify them according to the criteria for good contribution opportunities.\n    The URL for the issues is https://github.com/{{ $('Load Repo Info').item.json.owner }}/{{ $('Load Repo Info').item.json.name }}/issues.\n    When classifying issues, evaluate them based on issue title, issue content, and how well they meet the criteria (high, medium, low).\n\n\t\tFinally, translate all user-facing output content into the target language into ko-KR.\n\t\tThis translation step should be applied after the issue analysis and classification are complete.\n\n    [Criteria for good contribution opportunities]\n    Issues with detailed and well-written content.\n    Issues where bug or error logs and reproduction steps are clearly specified within the content.\n    Issues where the location of suspicious source code has been identified by the reporter or maintainer.\n    Issues where the maintainer has confirmed the problem, set a direction, or requested contributions.\n    Issues directly created by the maintainer.\n    Issues with a \"good first issue\" label and no \"blocked\" or \"wait-for-triage\" labels.\n    Issues for which a PR has not yet been created (it's okay if someone has only stated they will create a PR).\n\n    For issues that meet the above criteria well, explain and emphasize them in detail.\n    There is no need to summarize issues that do not meet the above criteria.\n    \n    Generate a YAML object that matches the TypeScript type $RepoInfo below:\n\n\t\tRules:\n    - Wrap every YAML list item in double quotes. Escape only double quotes (\") inside the string with a backslash (\").\n    - From the issues that meet the criteria, provide a minimum of 3 and a maximum of 5 of the most suitable ones.\n\t\t- Provide a minimum of 2 and a maximum of 3 reasons within the\n  reasons list.\n    - Translate all user-facing string values within the YAML output into the language into ko-KR. Do not translate the YAML keys.\n\t\t\n    ------------\n\t\ttype translationLanguageCode = 'en' | 'ko' | 'ja' | 'zh' | 'es' | 'fr' | 'de' | 'ru' | 'ar' | 'pt'; \n    type Level = \"high\" | \"medium\" | \"low\";\n\n    interface LevelWithReasons {\n        level: Level;\n        reasons: string[];\n    }\n\n    interface Issue {\n        issueTitle: string;\n        issueURL: string;\n        issueDescription: string;\n        issueSuitability: LevelWithReasons;\n    }\n\n    interface LatestRelease {\n        name: string;\n        description: string;\n    }\n\n    interface RepoInfo {\n        latestRelease: LatestRelease;\n        issues: Issue[];\n    }\n\n    ------------\n    Example output:\n\t\ttranslationLanguageCode: \"...\"\n    latestRelease:\n      name: \"v1.2.0-beta.0\"\n      description: |\n        ...\n    issues:\n    - issueTitle: |\n      ...\n      issueURL: \"https://example.com\"\n      issueDescription: |\n      ...\n      issueSuitability:\n        level: \"medium\"\n        reasons:\n            - \"...\"\n"
         }
       },
       "id": "8cf96e11-8bae-4585-b12a-7e22b97c2ebd",
@@ -149,7 +149,7 @@
         "hasOutputParser": true,
         "needsFallback": true,
         "options": {
-          "systemMessage": "=\n    you are an ai assistant that must use the available mcp tools when appropriate.\n\n    when the user asks any question about a GitHub repository — including how to contribute, how to fix an issue, how code works, or anything requiring repository context — you MUST call the deepwiki `ask_question` tool.\n\n    Input format:\n    - repoName: string — e.g. \"GitHub repository: owner/repo\"\n    - question: string — contains exactly one GitHub issue (including title and body)\n\n    Instructions:\n\n    1. Parse the issue’s title and body from the `question` field.\n    2. Construct a single string for the `question` field of the tool call. It MUST include the issue title, body, and a request for guidance. Use this exact template:\n\n         \"Here is a GitHub issue.\n         Title: {issueTitle}\n         Body: {issueBody}\n         How can this issue be resolved, what is its root cause, what is the recommended resolution approach, what is the technical difficulty, and what is a simple analogy for the issue and its resolution approach?\"\n\n    3. Call the deepwiki `ask_question` tool with an **object** containing:\n         - repoName: string\n         - question: string (constructed from step 2)\n    4. Never include an object inside the `question` field. It MUST always be a single string.\n    5. Base your final answer ONLY on the returned tool response.\n    6. Generate a single YAML object that matches the TypeScript type `Issue` below.\n    7. Add a brief, one-sentence summary of the contribution in the `summary` field.\n    8. For the `keyword` field, provide 1 to 5 highly relevant keywords related to the issue.\n    9. Extract the DeepWiki link from the following text. A DeepWiki link starts with \"https://deepwiki.com/\" and ends with a UUID-like ID (e.g., https://deepwiki.com/search/here-is-a-github-issue-title-s_42c32fcb-3ea0-4294-b170-01e7050b2489).\n\n    Rules:\n    - Do not include markdown code blocks in the output. (e.g., do not use ```python... ```.)\n    - Wrap every YAML list item in double quotes. Escape only double quotes (\") inside the string with a backslash (\").\n    - Translate all user-facing string values within the YAML output into the language specified by ko-KR. Do not translate the YAML keys.\n\n    type Level = \"High\" | \"Medium\" | \"Low\";\n\n    interface LevelWithReasons {\n        level: Level;\n        reasons: string[];\n    }\n\n    interface Issue {\n        issueURL: string;\n        deepwikiLink: string;\n        rootCause: string;\n        resolutionApproach: string[];\n        technicalDifficulty: LevelWithReasons;\n        summary: string;\n        keyword: string[];\n        analogy: string;\n    }\n\n    ------------\n    Example output:\n\n    issueURL: \"https://example.com\"\n    deepwikiLink: \"https://deepwiki.com/search/here-is-a-github-issue-title-s_42c32fcb-3ea0-4294-b170-01e7050b2489\"\n    rootCause: |\n      ...\n    resolutionApproach: \n      - \"...\"\n      - \"...\"\n    technicalDifficulty:\n      level: \"Low\"\n      reasons:\n        - \"...\"\n    summary: \"...\"\n    keyword:\n      - \"...\"\n      - \"...\"\n    analogy: \"...\"\n",
+          "systemMessage": "=\n    you are an ai assistant that must use the available mcp tools when appropriate.\n\n    when the user asks any question about a GitHub repository — including how to contribute, how to fix an issue, how code works, or anything requiring repository context — you MUST call the deepwiki `ask_question` tool.\n\n    Input format:\n    - repoName: string — e.g. \"GitHub repository: owner/repo\"\n    - question: string — contains exactly one GitHub issue (including title and body)\n\t\t\n\t\tRules:\n    - Do not include markdown code blocks in the output. (e.g., do not use ```python... ```.)\n    - Wrap every YAML list item in double quotes. Escape only double quotes (\") inside the string with a backslash (\").\n    - Translate all user-facing string values within the YAML output into ko-KR. Do not translate the YAML keys.\n\n    Instructions:\n\n    1. Parse the issue’s title and body from the `question` field.\n    2. Construct a single string for the `question` field of the tool call. It MUST include the issue title, body, and a request for guidance. Use this exact template:\n\n         \"Here is a GitHub issue.\n         Title: {issueTitle}\n         Body: {issueBody}\n         How can this issue be resolved, what is its root cause, what is the recommended resolution approach, what is the technical difficulty, and what is a simple analogy for the issue and its resolution approach?\n\t\t\t\t Please provide the answer in ko-KR.\"\n\n    3. Call the deepwiki `ask_question` tool with an **object** containing:\n         - repoName: string\n         - question: string (constructed from step 2)\n    4. Never include an object inside the `question` field. It MUST always be a single string.\n    5. Base your final answer ONLY on the returned tool response.\n    6. Generate a single YAML object that matches the TypeScript type `Issue` below.\n    7. Add a brief, one-sentence summary of the contribution in the `summary` field.\n    8. For the `keyword` field, provide 1 to 5 highly relevant keywords related to the issue.\n    9. Extract the DeepWiki link from the following text. A DeepWiki link starts with \"https://deepwiki.com/\" and ends with a UUID-like ID (e.g., https://deepwiki.com/search/here-is-a-github-issue-title-s_42c32fcb-3ea0-4294-b170-01e7050b2489).\n\n\t\t------------\n\t\ttype translationLanguageCode = 'en' | 'ko' | 'ja' | 'zh' | 'es' | 'fr' | 'de' | 'ru' | 'ar' | 'pt'; \n    type Level = \"High\" | \"Medium\" | \"Low\";\n\n    interface LevelWithReasons {\n        level: Level;\n        reasons: string[];\n    }\n\n    interface Issue {\n        issueURL: string;\n        deepwikiLink: string;\n        rootCause: string;\n        resolutionApproach: string[];\n        technicalDifficulty: LevelWithReasons;\n        summary: string;\n        keyword: string[];\n        analogy: string;\n    }\n\n    ------------\n    Example output:\n\n\t\ttranslationLanguageCode: \"...\"\n    issueURL: \"https://example.com\"\n    deepwikiLink: \"https://deepwiki.com/search/here-is-a-github-issue-title-s_42c32fcb-3ea0-4294-b170-01e7050b2489\"\n    rootCause: |\n      ...\n    resolutionApproach: \n      - \"...\"\n      - \"...\"\n    technicalDifficulty:\n      level: \"Low\"\n      reasons:\n        - \"...\"\n    summary: \"...\"\n    keyword:\n      - \"...\"\n      - \"...\"\n    analogy: \"...\"\n",
           "batching": {
             "batchSize": 3,
             "delayBetweenBatches": 5000
@@ -227,7 +227,7 @@
     {
       "parameters": {
         "schemaType": "manual",
-        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"latestRelease\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"name\": {\n          \"type\": \"string\"\n        },\n        \"description\": {\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\"name\", \"description\"]\n    },\n    \"issues\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"issueTitle\": {\n            \"type\": \"string\"\n          },\n          \"issueURL\": {\n            \"type\": \"string\",\n            \"format\": \"uri\"\n          },\n          \"issueDescription\": {\n            \"type\": \"string\"\n          },\n          \"issueSuitability\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"level\": {\n                \"type\": \"string\",\n                \"enum\": [\"high\", \"medium\", \"low\"]\n              },\n              \"reasons\": {\n                \"type\": \"array\",\n                \"items\": {\n                  \"type\": \"string\"\n                }\n              }\n            },\n            \"required\": [\"level\", \"reasons\"]\n          }\n        },\n        \"required\": [\"issueTitle\", \"issueURL\", \"issueDescription\", \"issueSuitability\"]\n      }\n    }\n  },\n  \"required\": [\"latestRelease\", \"issues\"]\n}",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n\t\t\"translationLanguageCode\" : {\n      \"type\": \"string\",\n      \"enum\": [\"en\", \"ko\", \"ja\", \"zh\", \"es\", \"fr\", \"de\", \"ru\", \"ar\", \"pt\"]\n    },\n    \"latestRelease\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"name\": {\n          \"type\": \"string\"\n        },\n        \"description\": {\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\"name\", \"description\"]\n    },\n    \"issues\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"issueTitle\": {\n            \"type\": \"string\"\n          },\n          \"issueURL\": {\n            \"type\": \"string\",\n\t\t\t\t\t\t\"pattern\": \"^https://github\\\\.com/.+/issues/\\\\d+$\"\n          },\n          \"issueDescription\": {\n            \"type\": \"string\"\n          },\n          \"issueSuitability\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"level\": {\n                \"type\": \"string\",\n                \"enum\": [\"high\", \"medium\", \"low\"]\n              },\n              \"reasons\": {\n                \"type\": \"array\",\n                \"items\": {\n                  \"type\": \"string\"\n                }\n              }\n            },\n            \"required\": [\"level\", \"reasons\"]\n          }\n        },\n        \"required\": [\"issueTitle\", \"issueURL\", \"issueDescription\", \"issueSuitability\"]\n      }\n    }\n  },\n  \"required\": [\"translationLanguageCode\", \"latestRelease\", \"issues\"]\n}",
         "autoFix": true
       },
       "id": "55e40e4e-b5fd-4bdc-a202-c38df06d7bb0",
@@ -242,7 +242,7 @@
     {
       "parameters": {
         "schemaType": "manual",
-        "inputSchema": "{\n        \"type\": \"object\",\n        \"properties\": {\n            \"issueURL\": {\n            \"type\": \"string\",\n            \"format\": \"uri\"\n            },\n            \"deepwikiLink\": {\n            \"type\": \"string\",\n            \"format\": \"uri\"\n            },\n            \"rootCause\": {\n            \"type\": \"string\"\n            },\n            \"resolutionApproach\": {\n            \"type\": \"array\",\n            \"items\": {\n                \"type\": \"string\"\n            }\n            },\n            \"technicalDifficulty\": {\n            \"type\": \"object\",\n            \"properties\": {\n                \"level\": {\n                \"type\": \"string\",\n                \"enum\": [\"High\", \"Medium\", \"Low\"]\n                },\n                \"reasons\": {\n                \"type\": \"array\",\n                \"items\": {\n                    \"type\": \"string\"\n                }\n                }\n            },\n            \"required\": [\"level\", \"reasons\"]\n            },\n            \"summary\": {\n            \"type\": \"string\"\n            },\n            \"keyword\": {\n            \"type\": \"array\",\n            \"items\": {\n                \"type\": \"string\"\n            }\n            },\n            \"analogy\": {\n            \"type\": \"string\"\n            }\n        },\n        \"required\": [\n            \"issueURL\",\n            \"deepwikiLink\",\n            \"rootCause\",\n            \"resolutionApproach\",\n            \"technicalDifficulty\",\n            \"summary\"\n        ]\n}",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"translationLanguageCode\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"enum\": [\"en\", \"ko\", \"ja\", \"zh\", \"es\", \"fr\", \"de\", \"ru\", \"ar\", \"pt\"]\n\t\t},\n\t\t\"issueURL\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"pattern\": \"^https://github\\\\.com/.+/issues/\\\\d+$\"\n\t\t},\n\t\t\"deepwikiLink\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"format\": \"uri\"\n\t\t},\n\t\t\"rootCause\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"resolutionApproach\": {\n\t\t\t\"type\": \"array\",\n\t\t\t\"items\": {\n\t\t\t\t\"type\": \"string\"\n\t\t\t}\n\t\t},\n\t\t\"technicalDifficulty\": {\n\t\t\t\"type\": \"object\",\n\t\t\t\"properties\": {\n\t\t\t\t\"level\": {\n\t\t\t\t\t\"type\": \"string\",\n\t\t\t\t\t\"enum\": [\"High\", \"Medium\", \"Low\"]\n\t\t\t\t},\n\t\t\t\t\"reasons\": {\n\t\t\t\t\t\"type\": \"array\",\n\t\t\t\t\t\"items\": {\n\t\t\t\t\t\t\"type\": \"string\"\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"required\": [\"level\", \"reasons\"]\n\t\t},\n\t\t\"summary\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"keyword\": {\n\t\t\t\"type\": \"array\",\n\t\t\t\"items\": {\n\t\t\t\t\"type\": \"string\"\n\t\t\t}\n\t\t},\n\t\t\"analogy\": {\n\t\t\t\"type\": \"string\"\n\t\t}\n\t},\n\t\"required\": [\n\t\t\"translationLanguageCode\",\n\t\t\"issueURL\",\n\t\t\"deepwikiLink\",\n\t\t\"rootCause\",\n\t\t\"resolutionApproach\",\n\t\t\"technicalDifficulty\",\n\t\t\"summary\",\n\t\t\"keyword\",\n    \"analogy\",\n\t]\n}",
         "autoFix": true
       },
       "id": "67ac635b-c9dd-48a1-b98b-11583f695b2e",
@@ -298,6 +298,7 @@
       "parameters": {
         "promptType": "=define",
         "text": "=\n\tI want you to create a newsletter title for the issue below.\n\n\t### Issue\n\t{{ $json.issues[0].toJsonString() }}\n\n\tOutput:\n",
+        "hasOutputParser": true,
         "needsFallback": true,
         "options": {
           "systemMessage": "=\n\tYou are an AI assistant that creates a newsletter title based on a GitHub issue.\n\n\tInstructions:\n\t1. Read the provided GitHub issue.\n\t2. Generate a short, catchy, and clickbait-style newsletter title.\n\t3. The title MUST meet the following criteria:\n\t\t- It must include a relevant emoji at the beginning.\n\t\t- It must be easily understandable for a non-technical audience.\n\t\t- It must be fun and intriguing to maximize open rates.\n\t4. Translate the final title into the language specified by ko-KR.\n\n\tRules:\n\t- The output should be a single line of text containing only the title.\n\t- Do not include any other text, explanations, or markdown.\n\n\t------------\n\tExample (if target language is English):\n\t✨ Don't Miss Out! Your Weekly Dose of Awesome Insights.\n"
@@ -531,7 +532,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const requiredModelKeys = [\n\t\"issueRankMainModel\",\n\t\"issueRankFallbackModel\",\n\t\"issueRankParserModel\",\n\t\"titleGeneratorMainModel\",\n\t\"titleGeneratorFallbackModel\",\n\t\"deepwikiMainModel\",\n\t\"deepwikiFallbackModel\",\n\t\"deepwikiParserModel\",\n]\nvar freeModels = [];\nvar requiredModels = {};\nfor (const item of $input.first().json.data) {\n\tif (item.pricing.prompt === \"0\" && item.pricing.completion === \"0\") {\n\t\tfreeModels.push(item)\n\t}\n}\nfreeModels.sort((a, b) => b.created - a.created)\nrequiredModelKeys.forEach((item, index) => {\n\trequiredModels[item] = freeModels[index % freeModels.length].id\n});\n\nreturn requiredModels"
+        "jsCode": "const requiredModelKeys = [\n\t\"issueRankMainModel\",\n\t\"issueRankFallbackModel\",\n\t\"issueRankParserModel\",\n\t\"titleGeneratorMainModel\",\n\t\"titleGeneratorFallbackModel\",\n    \"titleGeneratorParserModel\",\n\t\"deepwikiMainModel\",\n\t\"deepwikiFallbackModel\",\n\t\"deepwikiParserModel\",\n]\nvar freeModels = [];\nvar requiredModels = {};\nfor (const item of $input.first().json.data) {\n\tif (item.pricing.prompt === \"0\" && item.pricing.completion === \"0\") {\n\t\tfreeModels.push(item)\n\t}\n}\nfreeModels.sort((a, b) => b.created - a.created)\nrequiredModelKeys.forEach((item, index) => {\n\trequiredModels[item] = freeModels[index % freeModels.length].id\n});\n\nreturn requiredModels"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -629,6 +630,40 @@
       ],
       "id": "e748bce4-a5c2-4244-8b72-08914918a22d",
       "name": "If"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n      \"translationLanguageCode\" : {\n        \"type\": \"string\",\n        \"enum\": [\"en\", \"ko\", \"ja\", \"zh\", \"es\", \"fr\", \"de\", \"ru\", \"ar\", \"pt\"]\n      },\n      \"title\" : {\n        \"type\": \"string\"\n      }\n    },\n    \"required\": [\"translationLanguageCode\", \"title\"]\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2880,
+        480
+      ],
+      "id": "214a4a6d-33fa-413d-baf1-8d544a771aef",
+      "name": "Title Generator Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": "={{ $('Get Free Models').item.json.titleGeneratorParserModel }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        2816,
+        688
+      ],
+      "id": "ce24942d-3232-43f3-b9b9-68c3c53a07e9",
+      "name": "Title Generator Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "openRouterApi",
+          "name": "OpenRouter account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -928,15 +963,38 @@
           }
         ]
       ]
+    },
+    "Title Generator Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Title Generator Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Title Generator Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Title Generator Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "baef155b-41c9-4c39-b324-dad65b625f35",
+  "versionId": "17353ae1-b9fd-47ea-9650-dee3ffff118a",
   "meta": {
-    "instanceId": "57a13954f4ed37a4193a2c26d525fd5349259869b863b1ee01d7592b5d74be96"
+    "instanceId": "57a13954f4ed37a4193a2c26d525fd5349259869b863b1ee01d7592b5d74be96",
+    "templateCredsSetupCompleted": true
   },
   "tags": []
 }

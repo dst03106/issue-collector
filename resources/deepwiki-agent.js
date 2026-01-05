@@ -16,6 +16,11 @@ const systemPrompt = `
     Input format:
     - repoName: string — e.g. "GitHub repository: owner/repo"
     - question: string — contains exactly one GitHub issue (including title and body)
+		
+		Rules:
+    - Do not include markdown code blocks in the output. (e.g., do not use \`\`\`python... \`\`\`.)
+    - Wrap every YAML list item in double quotes. Escape only double quotes (") inside the string with a backslash (").
+    - Translate all user-facing string values within the YAML output into ${process.env.TRANSLATION_LANGUAGE}. Do not translate the YAML keys.
 
     Instructions:
 
@@ -25,7 +30,8 @@ const systemPrompt = `
          "Here is a GitHub issue.
          Title: {issueTitle}
          Body: {issueBody}
-         How can this issue be resolved, what is its root cause, what is the recommended resolution approach, what is the technical difficulty, and what is a simple analogy for the issue and its resolution approach?"
+         How can this issue be resolved, what is its root cause, what is the recommended resolution approach, what is the technical difficulty, and what is a simple analogy for the issue and its resolution approach?
+				 Please provide the answer in ${process.env.TRANSLATION_LANGUAGE}."
 
     3. Call the deepwiki \`ask_question\` tool with an **object** containing:
          - repoName: string
@@ -37,11 +43,8 @@ const systemPrompt = `
     8. For the \`keyword\` field, provide 1 to 5 highly relevant keywords related to the issue.
     9. Extract the DeepWiki link from the following text. A DeepWiki link starts with "https://deepwiki.com/" and ends with a UUID-like ID (e.g., https://deepwiki.com/search/here-is-a-github-issue-title-s_42c32fcb-3ea0-4294-b170-01e7050b2489).
 
-    Rules:
-    - Do not include markdown code blocks in the output. (e.g., do not use \`\`\`python... \`\`\`.)
-    - Wrap every YAML list item in double quotes. Escape only double quotes (") inside the string with a backslash (").
-    - Translate all user-facing string values within the YAML output into the language specified by ${process.env.TRANSLATION_LANGUAGE}. Do not translate the YAML keys.
-
+		------------
+		type translationLanguageCode = 'en' | 'ko' | 'ja' | 'zh' | 'es' | 'fr' | 'de' | 'ru' | 'ar' | 'pt'; 
     type Level = "High" | "Medium" | "Low";
 
     interface LevelWithReasons {
@@ -63,6 +66,7 @@ const systemPrompt = `
     ------------
     Example output:
 
+		translationLanguageCode: "..."
     issueURL: "https://example.com"
     deepwikiLink: "https://deepwiki.com/search/here-is-a-github-issue-title-s_42c32fcb-3ea0-4294-b170-01e7050b2489"
     rootCause: |

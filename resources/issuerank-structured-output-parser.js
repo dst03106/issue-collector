@@ -1,6 +1,10 @@
 const inputSchema = `{
   "type": "object",
   "properties": {
+		"translationLanguageCode" : {
+      "type": "string",
+      "enum": ["en", "ko", "ja", "zh", "es", "fr", "de", "ru", "ar", "pt"]
+    },
     "latestRelease": {
       "type": "object",
       "properties": {
@@ -49,7 +53,7 @@ const inputSchema = `{
       }
     }
   },
-  "required": ["latestRelease", "issues"]
+  "required": ["translationLanguageCode", "latestRelease", "issues"]
 }`;
 
 module.exports = {

@@ -5,6 +5,7 @@ const getFreeModels = function() {
 		"issueRankParserModel",
 		"titleGeneratorMainModel",
 		"titleGeneratorFallbackModel",
+		"titleGeneratorParserModel",
 		"deepwikiMainModel",
 		"deepwikiFallbackModel",
 		"deepwikiParserModel",
