@@ -125,7 +125,9 @@
     {
       "parameters": {
         "model": "={{ $('Get Free Models').item.json.issueRankFallbackModel }}",
-        "options": {}
+				"options": {
+          "timeout": 60000
+        }
       },
       "id": "40fdea76-e2e2-4542-a5f1-6ea24d807b00",
       "name": "IssueRank Fallback Model",
@@ -170,7 +172,9 @@
     {
       "parameters": {
         "model": "={{ $('Get Free Models').item.json.deepwikiMainModel }}",
-        "options": {}
+				"options": {
+          "timeout": 60000
+        }
       },
       "id": "790501c1-58d1-44e0-a953-b218906b0744",
       "name": "Deepwiki Main Model",
@@ -190,7 +194,9 @@
     {
       "parameters": {
         "model": "={{ $('Get Free Models').item.json.deepwikiFallbackModel }}",
-        "options": {}
+				"options": {
+          "timeout": 60000
+        }
       },
       "id": "a3544d83-c737-46b2-b0ea-61627d10c5f3",
       "name": "Deepwiki Fallback Model",
@@ -257,7 +263,9 @@
     {
       "parameters": {
         "model": "={{ $('Get Free Models').item.json.issueRankParserModel }}",
-        "options": {}
+				"options": {
+          "timeout": 60000
+        }
       },
       "id": "9f4536f4-a257-40c7-ac8a-139f20a23558",
       "name": "IssueRank Parser Model",
@@ -277,7 +285,9 @@
     {
       "parameters": {
         "model": "={{ $('Get Free Models').item.json.deepwikiParserModel }}",
-        "options": {}
+				"options": {
+          "timeout": 60000
+        }
       },
       "id": "abc620b3-de59-4d70-a3b0-bf883a1919b8",
       "name": "Deepwiki Parser Model",
@@ -318,7 +328,9 @@
     {
       "parameters": {
         "model": "={{ $('Get Free Models').item.json.titleGeneratorMainModel }}",
-        "options": {}
+				"options": {
+          "timeout": 60000
+        }
       },
       "id": "a7f0e4d2-49c9-4fb1-99d0-e6ff71625d19",
       "name": "Title Generator Main Model",
@@ -338,7 +350,9 @@
     {
       "parameters": {
         "model": "={{ $('Get Free Models').item.json.titleGeneratorFallbackModel }}",
-        "options": {}
+				"options": {
+          "timeout": 60000
+        }
       },
       "id": "8c44b955-7f11-4536-a43e-ce48d31dcb01",
       "name": "Title Generator Fallback Model",
@@ -513,7 +527,9 @@
     {
       "parameters": {
         "model": "={{ $('Get Free Models').item.json.issueRankMainModel }}",
-        "options": {}
+				"options": {
+          "timeout": 60000
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
@@ -648,7 +664,9 @@
     {
       "parameters": {
         "model": "={{ $('Get Free Models').item.json.titleGeneratorParserModel }}",
-        "options": {}
+				"options": {
+          "timeout": 60000
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
