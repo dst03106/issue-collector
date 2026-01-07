@@ -503,7 +503,7 @@
           "parameters": [
             {
               "name": "supported_parameters",
-              "value": "response_format"
+              "value": "response_format,tools"
             }
           ]
         },
