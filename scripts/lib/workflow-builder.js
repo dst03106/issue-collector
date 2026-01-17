@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { z } = require('zod');
 
 /**
  * 노드 이름을 kebab-case로 변환
@@ -32,17 +33,44 @@ function readResourceFiles(resourcesDir) {
         const ext = path.extname(file);
         const nameWithoutExt = path.basename(file, ext);
         try {
-          const moduleExports = require(filePath);
+           const moduleExports = require(filePath);
+
+           const extractFunctionBody = (functionString) => {
+             const match = functionString.match(/\{([\s\S]*)\}/m);
+             return match ? match[1].split('\n').map(line => line.replace(/^(\t|  )/, '')).join('\n').trim() : '';
+           };
+
+           const jsCodeSchema = z.object({
+             jsCode: z.string().transform(extractFunctionBody)
+           });
+
+           const nestedCodeSchema = z.object({
+             code: z.union([
+               z.object({
+                 execute: z.object({
+                   code: z.string().transform(extractFunctionBody)
+                 })
+               }),
+               z.object({
+                 supplyData: z.object({
+                   code: z.string().transform(extractFunctionBody)
+                 })
+               })
+             ])
+            });
 
           const getResource = (resource) => {
-            if (!Object.hasOwn(resource, 'jsCode') || typeof resource.jsCode !== 'string') {
-              return resource;
+            const jsCodeResult = jsCodeSchema.safeParse(resource);
+            if (jsCodeResult.success) {
+              return { ...resource, ...jsCodeResult.data }; 
             }
-            const functionString = resource.jsCode;
-            const match = functionString.match(/\{([\s\S]*)\}/m);
-            // 각 줄의 시작 부분에서 탭 한 개 또는 공백 두 개만 제거하여 첫 번째 들여쓰기만 없앱니다.
-            const body = match ? match[1].split('\n').map(line => line.replace(/^(\t|  )/, '')).join('\n').trim() : '';
-            return { ...resource, "jsCode": body };
+
+            const nestedResult = nestedCodeSchema.safeParse(resource);
+            if (nestedResult.success) {
+              return { ...resource, ...nestedResult.data };
+            }
+
+            return resource;
           };
 
           if (moduleExports && Object.keys(moduleExports).length > 0) {

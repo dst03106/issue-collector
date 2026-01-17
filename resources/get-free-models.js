@@ -3,10 +3,12 @@ const getFreeModels = function() {
 		"issueRankMainModel",
 		"issueRankFallbackModel",
 		"issueRankParserModel",
+		"deepwikiMainModel",
+		"deepwikiFallbackModel",
+		"deepwikiParserModel",
 		"titleGeneratorMainModel",
 		"titleGeneratorFallbackModel",
 		"titleGeneratorParserModel",
-		"deepwikiMainModel",
 	]
 	var freeModels = [];
 	var requiredModels = {};

@@ -6,7 +6,10 @@
   "dependencies": {
     "@langchain/mcp-adapters": "^1.1.1",
     "dotenv": "^17.2.3",
+    "langchain": "^1.2.7",
     "mjml": "^4.16.1",
-    "n8n": "^2.0.0"
-  }
+    "n8n": "^2.0.0",
+    "zod": "3.x"
+	},
+	"_note_zod_pin": "n8n uses zod-class → requires Zod v3.x (no v4 support)"
 }

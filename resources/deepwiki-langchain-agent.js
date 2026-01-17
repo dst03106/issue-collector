@@ -1,117 +1,89 @@
-const { getFunctionBodyRegex } = require('../resources/utils');
 
 const deepwikiLangchainAgent = async () => {
+	const { createAgent, modelFallbackMiddleware, toolRetryMiddleware } = require("langchain");
 	const { ChatPromptTemplate } = require("@langchain/core/prompts");
-	const { StateGraph, START, END, Annotation, MessagesAnnotation, Send } = require("@langchain/langgraph");
-	const { MultiServerMCPClient } = require("@langchain/mcp-adapters");
 	const { AIMessage } = require("@langchain/core/messages");
+	const { StateGraph, START, END, Annotation, Send } = require("@langchain/langgraph");
 	const { ToolNode } = require("@langchain/langgraph/prebuilt");
+	const { MultiServerMCPClient } = require("@langchain/mcp-adapters");
 
 	const llmModel = await this.getInputConnectionData('ai_languageModel', 0);
+	const mainModel = llmModel[0];
+	const fallbackModel = llmModel[1];
+
 	const mcpClient = new MultiServerMCPClient({  
-			deepwiki: {
-					transport: "http",
-					url: "https://mcp.deepwiki.com/mcp",
-			},
+		deepwiki: {
+			transport: "http",
+			url: "https://mcp.deepwiki.com/mcp",
+		},
 	});
 	const tools = await mcpClient.getTools()
 	const askQuestionTool = tools.filter(t => t.name === "ask_question")[0];
 
 	const { owner, name } = $('Load Repo Info').item.json;
 	const repoName = `${owner}/${name}`;
-	const issues = this.getInputData().map(input => input.json);
-	
-	const TechnicalDifficultySchema = {
+	const issues = $('get Top Fit Issues').item.json.issues;
+
+	const DeepwikiResponseSchema = $('Deepwiki Response Schema').item.json;
+	const wrappedSchema = {
 		type: "object",
 		properties: {
-			level: {
-				type: "string",
-				enum: ["High", "Medium", "Low"],
-				description: "High | Medium | Low"
-			},
-			reasons: {
-				type: "array",
-				items: { type: "string" },
-				description: "Reasons for the difficulty level"
-			}
+			output: DeepwikiResponseSchema
 		},
-		required: ["level", "reasons"]
+		required: ["output"]
 	};
 
-	const IssueResponseSchema = {
-		type: "object",
-		properties: {
-			translationLanguageCode: {
-				type: "string",
-				enum: ["en", "ko", "ja", "zh", "es", "fr", "de", "ru", "ar", "pt"],
-				description: "Language code like 'ko'"
-			},
-			deepwikiLink: {
-				type: "string",
-				pattern: "^https://deepwiki\\.com/.*",
-				errorMessage: "Must start with https://deepwiki.com/"
-			},
-			rootCause: {
-				type: "string",
-				description: "Root cause of the issue"
-			},
-			resolutionApproach: {
-				type: "array",
-				items: { type: "string" },
-				description: "List of resolution approaches"
-			},
-			technicalDifficulty: {
-				...TechnicalDifficultySchema,
-				description: "Technical difficulty assessment"
-			},
-			summary: {
-				type: "string",
-				description: "One-sentence contribution summary"
-			},
-			keyword: {
-				type: "array",
-				items: { type: "string" },
-				description: "1-5 relevant keywords"
-			},
-			analogy: {
-				type: "string",
-				description: "Simple analogy for issue and resolution"
-			}
-		},
-		required: ["translationLanguageCode", "deepwikiLink", "rootCause", "resolutionApproach", "technicalDifficulty", "summary", "keyword", "analogy"]
-	};
+	const userPrompt = `
+		DeepWiki Analysis:
+		{deepwikiResponse}
 
-	const userPrompt = `                              
-	 I have received a DeepWiki analysis for a GitHub issue:
-	 ### DeepWiki Analysis     
-	 {deepwikiResponse}
-														
-	 Please process this DeepWiki analysis and extract structured information.        
+		Extract and return ONLY a JSON object following the exact schema. No markdown, no code blocks, just raw JSON.
+		Preserve the full length and content of the original text rather than summarizing
 	`;
 
-	const systemPrompt = `                              
-	 You are an AI assistant that processes DeepWiki GitHub issue analysis and extracts structured information.                                        
-																									
-	 Your task:                                          
-	 1. Analyze the provided DeepWiki response           
-	 2. Extract the following information:               
-			- Root cause of the issue                        
-			- Resolution approaches (as array of strings)    
-			- Technical difficulty level (High/Medium/Low) with reasons                                 
-			- Brief summary of the contribution              
-			- Relevant keywords (1-5 keywords)               
-			- Simple analogy explaining the issue and resolution
-			
-	 Output requirements:                                
-	 - All content should be in ${process.env.TRANSLATION_LANGUAGE}                         
-	 - Use the structured output schema that will be applied automatically
-	 - Focus on clarity and accuracy in extracted information
-	 `;
-	const promptTemplate = ChatPromptTemplate.fromMessages([
-		["system", systemPrompt],
+	const systemPrompt = `
+		You are an AI assistant that processes DeepWiki GitHub issue analysis.
+		
+		You must format your output as a JSON value that adheres to a given "JSON Schema" instance.
+		"JSON Schema" is a declarative language that allows you to annotate and validate JSON documents.
+
+		Follow this JSON Schema:
+		${JSON.stringify(wrappedSchema, null, 2)}
+
+		Requirements:
+		- All content must be in "${translationLanguage}"
+		- translationLanguageCode should be "${translationLanguage}"
+		- deepwikiLink must start with https://deepwiki.com/
+		- technicalDifficulty.level must be one of: High, Medium, Low
+		- keyword should contain 1-5 relevant keywords
+
+		Example output:
+		{
+			"translationLanguageCode": "en",
+			"deepwikiLink": "https://deepwiki.com/search/here-is-a-github-issue-title-s_d2cf1a6c-1109-479c-986c-40cc2fa1f1c1",
+			"rootCause": "Memory leak occurs during component rendering due to missing cleanup",
+			"resolutionApproach": [
+				"Add useEffect cleanup function",
+				"Implement event listener removal logic"
+			],
+			"technicalDifficulty": {
+				"level": "Medium",
+				"reasons": [
+					"Requires understanding of React lifecycle",
+					"Need memory profiling experience"
+				]
+			},
+			"summary": "Resolve React component memory leak by implementing proper cleanup function",
+			"keyword": ["React", "memory leak", "useEffect", "cleanup"],
+			"analogy": "Like leaving a faucet running - without cleanup, memory keeps leaking continuously"
+		}
+
+		Output ONLY the JSON object. No additional text.
+	`;
+	const userPromptTemplate = ChatPromptTemplate.fromMessages([
 		["user", userPrompt]
 	]);
-	
+
 	async function deepwikiToolNode({ issue }) {
 		const toolCall = {
 			name: "ask_question",
@@ -138,21 +110,44 @@ const deepwikiLangchainAgent = async () => {
 		}]};
 	}
 
-	async function reasonNode({ deepwikiResponse, issueURL }) {
-		const structuredModel = llmModel.withStructuredOutput(IssueResponseSchema);
-		const reasonChain = promptTemplate.pipe(structuredModel);
-		const reasonResult = await reasonChain.invoke({ 
+	const agent = createAgent({
+		model: mainModel,
+		middleware: [
+			modelFallbackMiddleware(fallbackModel),
+			toolRetryMiddleware({              
+				maxRetries: 3,
+				backoffFactor: 2.0
+			})
+		],
+		systemPrompt: systemPrompt,
+	});
+	const outputParser = await this.getInputConnectionData('ai_outputParser', 0);
+	async function reasonNode({ deepwikiResponse, issueURL, retryCount }) {
+		const userMessages = await userPromptTemplate.invoke({ 
 			deepwikiResponse: deepwikiResponse,
 		});
-		reasonResult.issueURL = issueURL
-		const reasonMessage = new AIMessage({
-			content: JSON.stringify(reasonResult, null, 2)
+		const reasonResult = await agent.invoke({ 
+			messages: userMessages.messages, 
 		});
-		return { finalAnswers: [reasonMessage] };
+		const aiMessage = reasonResult.messages.findLast(m => m.type === "ai")?.content; 
+		if (!aiMessage?.trim()) {
+			if (retryCount < 3) return new Send("reason", {
+				deepwikiResponse,
+				issueURL,
+				retryCount: retryCount + 1
+			})
+			throw new Error(
+				`Failed to get structured response from DeepWiki after ${retryCount} retries. ` +
+				`Issue URL: ${issueURL}. ` +
+				`The model returned an empty structured response.`
+			);
+		}
+		const parsedMessage = await outputParser.parse(aiMessage);	
+		parsedMessage.output.issueURL = issueURL
+		return { finalAnswers: [parsedMessage.output] };
 	}
-	
+
 	const MessagesState = Annotation.Root({
-		...MessagesAnnotation.spec,
 		deepwikiResponses: Annotation({
 			reducer: (current, update) => current.concat(update),
 			default: () => [],
@@ -169,27 +164,33 @@ const deepwikiLangchainAgent = async () => {
 			return issues.map((issue) => new Send("deepwikiTool", { issue }));
 		})
 		.addConditionalEdges("deepwikiTool", ({ deepwikiResponses }) => {
-			return deepwikiResponses.map(({ deepwikiResponse, issueURL }) => new Send("reason", { deepwikiResponse, issueURL }));
+			return deepwikiResponses.map(({ deepwikiResponse, issueURL }) => new Send("reason", { deepwikiResponse, issueURL, retryCount: 0 }));
 		})
 		.addEdge("reason", END)
 		.compile();
 
-	const result = await workflow.invoke({ messages: [] });
-	const aiMessages = result.finalAnswers;
-	return aiMessages.map(input => JSON.parse(input.content));
+	const result = await workflow.invoke({});
+	return result.finalAnswers;
 }
 
 module.exports = {
 	"code": {
 		"execute" : {
-			"code" : getFunctionBodyRegex(deepwikiLangchainAgent)
+			"code" : deepwikiLangchainAgent
+				.toString()
+				.replace(/{translationLanguage}/g, process.env.TRANSLATION_LANGUAGE)
 		}
 	},
 	"inputs": {
 		"input": [
 			{
-				"type": "ai_languageModel",
+				"type": "ai_outputParser",
 				"maxConnections": 1,
+				"required": true
+			},
+			{
+				"type": "ai_languageModel",
+				"maxConnections": 2,
 				"required": true
 			},
 			{

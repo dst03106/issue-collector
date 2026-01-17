@@ -5,14 +5,17 @@ const convertMJML = function () {
       }
       return items.map(item => `<mj-text mj-class="section-content">• ${item}</mj-text>`).join('<br/>');
   };
+	const latestReleaseInfo = $('Issue Analysis Langchain Agent').first().json.latestRelease;
   let latestRelease = `
       <mj-section padding="15px">
           <mj-column border="3px solid #52af0f">
-              <mj-text mj-class="section-title">🚀 Latest Release (${$('IssueRank Agent').first().json.output.latestRelease.name})</mj-text>
-              <mj-text mj-class="section-content">${$('IssueRank Agent').first().json.output.latestRelease.description}</mj-text>
-          </mj-column>
-      </mj-section>`;
-
+              <mj-text mj-class="section-title">🚀 Latest Release (${latestReleaseInfo.name})</mj-text>
+			`;
+	for (const { category, descriptions } of latestReleaseInfo.details) {
+		latestRelease += `<mj-text mj-class="section-content">${category}</mj-text>`;
+		latestRelease += createBulletedList(descriptions);
+	}
+	latestRelease += '</mj-column></mj-section>';
   let summary = `
       <mj-section padding="15px">
           <mj-column border="3px solid #193404">
