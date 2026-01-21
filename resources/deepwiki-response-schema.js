@@ -25,8 +25,7 @@ const deepwikiResponseSchema = () => {
 		properties: {
 			translationLanguageCode: {
 				type: "string",
-				enum: ["en", "ko", "ja", "zh", "es", "fr", "de", "ru", "ar", "pt"],
-				description: "Language code like 'ko'"
+				description: "Language code"
 			},
 			deepwikiLink: {
 				type: "string",

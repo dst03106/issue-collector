@@ -8,7 +8,6 @@ const issueAnalysisSchema = () => {
 		properties: {
 			translationLanguageCode: {
 				type: "string",
-				enum: ["en", "ko", "ja", "zh", "es", "fr", "de", "ru", "ar", "pt"],
 				description: "Language code"
 			},
 			latestRelease: {

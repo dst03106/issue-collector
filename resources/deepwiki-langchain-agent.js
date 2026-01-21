@@ -57,23 +57,25 @@ const deepwikiLangchainAgent = async () => {
 
 		Example output:
 		{
-			"translationLanguageCode": "en",
-			"deepwikiLink": "https://deepwiki.com/search/here-is-a-github-issue-title-s_d2cf1a6c-1109-479c-986c-40cc2fa1f1c1",
-			"rootCause": "Memory leak occurs during component rendering due to missing cleanup",
-			"resolutionApproach": [
-				"Add useEffect cleanup function",
-				"Implement event listener removal logic"
-			],
-			"technicalDifficulty": {
-				"level": "Medium",
-				"reasons": [
-					"Requires understanding of React lifecycle",
-					"Need memory profiling experience"
-				]
-			},
-			"summary": "Resolve React component memory leak by implementing proper cleanup function",
-			"keyword": ["React", "memory leak", "useEffect", "cleanup"],
-			"analogy": "Like leaving a faucet running - without cleanup, memory keeps leaking continuously"
+			"output": {
+				"translationLanguageCode": "en",
+				"deepwikiLink": "https://deepwiki.com/search/here-is-a-github-issue-title-s_d2cf1a6c-1109-479c-986c-40cc2fa1f1c1",
+				"rootCause": "Memory leak occurs during component rendering due to missing cleanup",
+				"resolutionApproach": [
+					"Add useEffect cleanup function",
+					"Implement event listener removal logic"
+				],
+				"technicalDifficulty": {
+					"level": "Medium",
+					"reasons": [
+						"Requires understanding of React lifecycle",
+						"Need memory profiling experience"
+					]
+				},
+				"summary": "Resolve React component memory leak by implementing proper cleanup function",
+				"keyword": ["React", "memory leak", "useEffect", "cleanup"],
+				"analogy": "Like leaving a faucet running - without cleanup, memory keeps leaking continuously"
+			}
 		}
 
 		Output ONLY the JSON object. No additional text.
