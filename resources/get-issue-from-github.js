@@ -6,6 +6,7 @@ const getIssueFromGithubQuery = `
                     name
                     description
                     createdAt
+										url
                 }
             }
             issues(first: 10, states: OPEN, orderBy: { field: CREATED_AT, direction: DESC }) {

@@ -13,7 +13,6 @@ const issueAnalysisSchema = () => {
 			latestRelease: {
 				type: "object",
 				properties: {
-					name: { type: "string", description: "Release name" },
 					details: {
 						type: "array",
 						items: {
@@ -26,12 +25,14 @@ const issueAnalysisSchema = () => {
 								descriptions: {
 									type: "array",
 									items: { type: "string" },
-									description: "Release descriptions"
+									maxItems: 3,
+									description: "Compressed release descriptions (maximum 3 items)"
 								}
-							},
-							required: ["category", "descriptions"]
 						},
-						description: "Array of release details"
+						required: ["category", "descriptions"]
+					},
+					maxItems: 3,
+					description: "Array of release details (maximum 3 items)"
 					}
 				},
 				required: ["name", "details"]

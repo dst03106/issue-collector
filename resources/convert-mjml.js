@@ -9,10 +9,10 @@ const convertMJML = function () {
   let latestRelease = `
       <mj-section padding="15px">
           <mj-column border="3px solid #52af0f">
-              <mj-text mj-class="section-title">🚀 Latest Release (${latestReleaseInfo.name})</mj-text>
+              <mj-text mj-class="section-title">🚀 Latest Release <a href="${latestReleaseInfo.url}">(${latestReleaseInfo.name})</a></mj-text>
 			`;
 	for (const { category, descriptions } of latestReleaseInfo.details) {
-		latestRelease += `<mj-text mj-class="section-content">${category}</mj-text>`;
+		latestRelease += `<mj-text mj-class="section-content" font-weight="bold">[${category}]</mj-text>`;
 		latestRelease += createBulletedList(descriptions);
 	}
 	latestRelease += '</mj-column></mj-section>';
@@ -50,8 +50,8 @@ const convertMJML = function () {
       technicalDifficulty += createBulletedList(issue.json.technicalDifficulty.reasons);
       technicalDifficulty += '</mj-text>';
 
-      let issuelink = `<mj-text mj-class="section-title"><p>👉 Go to Issue <a href="${issue.json.issueURL}">(Link)</a></p></mj-text>`;
-      let deepwikiLink = `<mj-text mj-class="section-title"><p>🌀 Go to Deepwiki search result <a href="${issue.json.deepwikiLink}">(Link)</a></p></mj-text>`;
+      let issuelink = `<mj-text mj-class="section-title"><p>👉 Go to the Issue <a href="${issue.json.issueURL}">(Link)</a></p></mj-text>`;
+      let deepwikiLink = `<mj-text mj-class="section-title"><p>🌀 Check the code-level explanation on Deepwiki <a href="${issue.json.deepwikiLink}">(Link)</a></p></mj-text>`;
 
       issues.push(issueInfo + resolutionApproach + issueSuitability + technicalDifficulty + issuelink + deepwikiLink)
   }
