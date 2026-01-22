@@ -1,17 +1,36 @@
 const getFreeModels = function() {
-	const requiredModelLength = 9;
+	// Based on OpenRouter market share rankings
+	const RELIABLE_PROVIDER = [
+			'google', 'anthropic', 'openai',
+			'x-ai', 'deepseek', 'xiaomi',
+			'qwen', 'mistralai', 'z-ai'
+	];
+
+	function isReliableProvider(modelInfo) {
+		const provider = modelInfo.id.split("/")[0];
+		return RELIABLE_PROVIDER.includes(provider)
+	}
+
+	function isFreeModel(modelInfo) {
+		return modelInfo.pricing.prompt === "0" && modelInfo.pricing.completion === "0" 
+	}
+
 	var freeModels = [];
-	var requiredModels = [];
+	var reliableModels = [];
 	for (const item of $input.first().json.data) {
-		if (item.pricing.prompt === "0" && item.pricing.completion === "0") {
+		if (isFreeModel(item)) {
 			freeModels.push(item)
+			if (isReliableProvider(item)) {
+				reliableModels.push(item)
+			} 
 		}
 	}
-	freeModels.sort((a, b) => b.created - a.created)
-	Array.from({ length: requiredModelLength }).forEach((_item, index) => {
-		requiredModels.push({id : freeModels[index % freeModels.length].id});
-	});
-	return requiredModels
+
+	var selectedModels = reliableModels || freeModels; 
+	selectedModels.sort((a, b) => b.created - a.created);
+	return selectedModels.map(model => {
+		return { id: model.id}
+	}) 
 };
 
 module.exports = {
