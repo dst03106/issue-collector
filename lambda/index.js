@@ -44,19 +44,42 @@ exports.handler = async (event) => {
 		n8n_github_access_token: event.n8n_github_access_token,
 		google_app_password: event.google_app_password
 	};
-	await executeWorkflow(config)
-		.then(({ error, stderr, stdout }) => {
-			if (stdout) console.log(`[STDOUT] ${stdout}`);
-			if (stderr) console.error(`[STDERR] ${stderr}`); 
-			if (error) console.error(`[EXEC ERROR] ${error.message}`);
-		})
-    .catch(({ error, stderr, stdout }) => {
-			if (stdout) console.log(`[STDOUT] ${stdout}`);
-			if (stderr) console.error(`[STDERR] ${stderr}`); 
-			if (error) console.error(`[EXEC ERROR] ${error.message}`);
-		});
-	return {                                                                            
-		statusCode: 200,                                                                  
-		body: JSON.stringify({ message: 'Success' })                          
- }; 
+	const maxAttempts = 3; // Total attempts: initial + 2 retries
+	let lastError;
+
+	for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+		try {
+			console.log(`Attempt ${attempt}/${maxAttempts}...`);
+			await executeWorkflow(config)
+				.then(({ error, stderr, stdout }) => {
+					if (stdout) console.log(`[STDOUT] ${stdout}`);
+					if (stderr) console.error(`[STDERR] ${stderr}`);
+					if (error) throw new Error(`Exec error: ${error.message}`);
+				})
+				.catch(({ error, stderr, stdout }) => {
+					if (stdout) console.log(`[STDOUT] ${stdout}`);
+					if (stderr) console.error(`[STDERR] ${stderr}`);
+					throw new Error(`Workflow failed: ${error?.message || stderr}`);
+				});
+			// Success: break out
+			return {
+				statusCode: 200,
+				body: JSON.stringify({ message: 'Success' }),
+			};
+		} catch (error) {
+			lastError = error;
+			console.error(`Attempt ${attempt} failed: ${error.message}`);
+			if (attempt < maxAttempts) {
+				console.log('Retrying in 5 seconds...');
+				await new Promise(resolve => setTimeout(resolve, 5000)); // 5-second delay
+			}
+		}
+	}
+
+	// All attempts failed
+	console.error(`All ${maxAttempts} attempts failed: ${lastError.message}`);
+	return {
+		statusCode: 500,
+		body: JSON.stringify({ message: 'Workflow execution failed after retries' }),
+	};
 }
