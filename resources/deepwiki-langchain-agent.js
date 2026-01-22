@@ -1,5 +1,5 @@
 const deepwikiLangchainAgent = async () => {
-	const { createAgent, modelFallbackMiddleware, toolRetryMiddleware } = require("langchain");
+	const { createAgent, initChatModel, modelRetryMiddleware, createMiddleware } = require("langchain");
 	const { ChatPromptTemplate } = require("@langchain/core/prompts");
 	const { AIMessage } = require("@langchain/core/messages");
 	const { StateGraph, START, END, Annotation, Send } = require("@langchain/langgraph");
@@ -109,20 +109,59 @@ const deepwikiLangchainAgent = async () => {
 			issueURL: issue.issueURL	
 		}]};
 	}
+	
+	function customFallbackMiddleware(...fallbackModels) {
+		return createMiddleware({
+			name: "customFallbackMiddleware",
+			wrapModelCall: async (request, handler) => {
+				try {
+					const response = await handler(request);
+					if (!response.content?.trim()) {
+						throw new Error("The AI model's response content is empty or contains only whitespace.")
+					}
+					return response;
+				} catch (error) {
+					for (let i = 0; i < Math.min(3, fallbackModels.length); i++) {
+						try {
+							const fallbackModel = fallbackModels[i];
+							const model =
+								typeof fallbackModel === "string"
+								? await initChatModel(fallbackModel)
+								: fallbackModel;
+
+							const response = await handler({
+								...request,
+								model,
+							});
+							if (response.content?.trim()) {
+								return response;
+							}
+						} catch (fallbackError) {
+							if (i === fallbackModels.length - 1) {
+								throw fallbackError;
+							}
+						}
+					}
+					throw error;
+				}
+			}});
+	}
 
 	const agent = createAgent({
 		model: mainModel,
 		middleware: [
-			modelFallbackMiddleware(...otherModels),
-			toolRetryMiddleware({              
-				maxRetries: 3,
-				backoffFactor: 2.0
+			customFallbackMiddleware(...otherModels),
+			modelRetryMiddleware({              
+				maxRetries: 1,
+				backoffFactor: 2.0,
+				initialDelayMs: 20000,
+				jitter: true,
 			})
 		],
 		systemPrompt: systemPrompt,
 	});
 	const outputParser = await this.getInputConnectionData('ai_outputParser', 0);
-	async function reasonNode({ deepwikiResponse, issueURL, retryCount }) {
+	async function reasonNode({ deepwikiResponse, issueURL }) {
 		const userMessages = await userPromptTemplate.invoke({ 
 			deepwikiResponse: deepwikiResponse,
 		});
@@ -130,18 +169,6 @@ const deepwikiLangchainAgent = async () => {
 			messages: userMessages.messages, 
 		});
 		const aiMessage = reasonResult.messages.findLast(m => m.type === "ai")?.content; 
-		if (!aiMessage?.trim()) {
-			if (retryCount < 3) return new Send("reason", {
-				deepwikiResponse,
-				issueURL,
-				retryCount: retryCount + 1
-			})
-			throw new Error(
-				`Failed to get structured response from DeepWiki after ${retryCount} retries. ` +
-				`Issue URL: ${issueURL}. ` +
-				`The model returned an empty structured response.`
-			);
-		}
 		const parsedMessage = await outputParser.parse(aiMessage);	
 		parsedMessage.output.issueURL = issueURL
 		return { finalAnswers: [parsedMessage.output] };
@@ -164,7 +191,7 @@ const deepwikiLangchainAgent = async () => {
 			return issues.map((issue) => new Send("deepwikiTool", { issue }));
 		})
 		.addConditionalEdges("deepwikiTool", ({ deepwikiResponses }) => {
-			return deepwikiResponses.map(({ deepwikiResponse, issueURL }) => new Send("reason", { deepwikiResponse, issueURL, retryCount: 0 }));
+			return deepwikiResponses.map(({ deepwikiResponse, issueURL }) => new Send("reason", { deepwikiResponse, issueURL }));
 		})
 		.addEdge("reason", END)
 		.compile();
