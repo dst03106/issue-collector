@@ -1,26 +1,26 @@
 const issueAnalysisLangchainAgent = async () => {
-		const { createAgent, modelFallbackMiddleware, toolRetryMiddleware } = require("langchain");
-    const { ChatPromptTemplate } = require("@langchain/core/prompts");
-		
-		const workflowStaticData = $getWorkflowStaticData('global');
- 		const { mainModel, otherModels } = workflowStaticData.ModelSelector.allModels;
-		
-		const outputParser = await this.getInputConnectionData('ai_outputParser', 0);
+	const { createAgent, initChatModel, modelRetryMiddleware, createMiddleware } = require("langchain");
+	const { ChatPromptTemplate } = require("@langchain/core/prompts");
 
-		const repositoryInfo = $('Get Issue From Github').item.json.data.repository;
-		const issues = repositoryInfo.issues.nodes;
-		const release =	repositoryInfo.releases.nodes[0];
+	const workflowStaticData = $getWorkflowStaticData('global');
+	const { mainModel, otherModels } = workflowStaticData.ModelSelector.allModels;
 
-		const IssueAnalysisSchema = $('Issue Analysis Schema').item.json;
-		const wrappedSchema = {
-			type: "object",
-			properties: {
-				output: IssueAnalysisSchema 
-			},
-			required: ["output"]
-		};
+	const outputParser = await this.getInputConnectionData('ai_outputParser', 0);
 
-    const userPrompt = `
+	const repositoryInfo = $('Get Issue From Github').item.json.data.repository;
+	const issues = repositoryInfo.issues.nodes;
+	const release =	repositoryInfo.releases.nodes[0];
+
+	const IssueAnalysisSchema = $('Issue Analysis Schema').item.json;
+	const wrappedSchema = {
+		type: "object",
+		properties: {
+			output: IssueAnalysisSchema 
+		},
+		required: ["output"]
+	};
+
+	const userPrompt = `
 			[ISSUES]
 			{issuesJson}
 
@@ -28,12 +28,12 @@ const issueAnalysisLangchainAgent = async () => {
 			{releaseJson}
 
 			Please analyze the issues and release above. Output the JSON result.
-    `.trim();
-		const userPromptTemplate = ChatPromptTemplate.fromMessages([
-			["user", userPrompt]
-		]);
+		`.trim();
+	const userPromptTemplate = ChatPromptTemplate.fromMessages([
+		["user", userPrompt]
+	]);
 
-    const systemPrompt = `
+	const systemPrompt = `
 			You are a 10-year experienced developer with extensive open-source contribution experience.
 
 			You must format your output as a JSON value that adheres to a given "JSON Schema" instance.
@@ -65,39 +65,79 @@ const issueAnalysisLangchainAgent = async () => {
 			- Translate all user-facing strings into ${translationLanguage}
 			- Keep keys in English
 			- Do not include markdown code blocks in the output
-    `.trim();
+		`.trim();
 
-		const agent = createAgent({
-			model: mainModel,
-			middleware: [
-				modelFallbackMiddleware(...otherModels),
-				toolRetryMiddleware({              
-					maxRetries: 3,
-					backoffFactor: 2.0
-				})
-			],
-			systemPrompt: systemPrompt,
-		});
-		const userMessages = await userPromptTemplate.invoke({ 
-			issuesJson: JSON.stringify(issues, null, 2),
-			releaseJson: JSON.stringify(release)
-		});
-		const result = await agent.invoke({ 
-			messages: userMessages.messages, 
-		});
-		const aiMessage = result.messages.findLast(m => m.type === "ai")?.content; 
+	function customFallbackMiddleware(...fallbackModels) {
+		return createMiddleware({
+			name: "customFallbackMiddleware",
+			wrapModelCall: async (request, handler) => {
+				try {
+					const response = await handler(request);
+					if (!response.content?.trim()) {
+						throw new Error("The AI model's response content is empty or contains only whitespace.")
+					}
+					return response;
+				} catch (error) {
+					for (let i = 0; i < Math.min(3, fallbackModels.length); i++) {
+						try {
+							const fallbackModel = fallbackModels[i];
+							const model =
+								typeof fallbackModel === "string"
+								? await initChatModel(fallbackModel)
+								: fallbackModel;
 
-		const parsedMessage = await outputParser.parse(aiMessage)
-		parsedMessage.output.latestRelease.url = release.url
-    return [parsedMessage.output];
+							const response = await handler({
+								...request,
+								model,
+							});
+							if (response.content?.trim()) {
+								return response;
+							}
+						} catch (fallbackError) {
+							if (i === fallbackModels.length - 1) {
+								throw fallbackError;
+							}
+						}
+					}
+					throw error;
+				}
+			}});
+	}
+	const agent = createAgent({
+		model: mainModel,
+		middleware: [
+			customFallbackMiddleware(...otherModels),
+			modelRetryMiddleware({              
+				maxRetries: 1,
+				backoffFactor: 2.0,
+				initialDelayMs: 20000,
+				jitter: true,
+			})
+		],
+		systemPrompt: systemPrompt,
+	});
+
+	const userMessages = await userPromptTemplate.invoke({ 
+		issuesJson: JSON.stringify(issues, null, 2),
+		releaseJson: JSON.stringify(release)
+	});
+	const result = await agent.invoke({ 
+		messages: userMessages.messages, 
+	});
+	const aiMessage = result.messages.findLast(m => m.type === "ai")?.content; 
+
+	const parsedMessage = await outputParser.parse(aiMessage)
+	parsedMessage.output.latestRelease.url = release.url
+	parsedMessage.output.latestRelease.name = release.name
+	return [parsedMessage.output];
 }
 
 module.exports = {
 	"code": {
 		"execute" : {
 			"code" : issueAnalysisLangchainAgent
-				.toString()
-				.replace(/{translationLanguage}/g, process.env.TRANSLATION_LANGUAGE)
+			.toString()
+			.replace(/{translationLanguage}/g, process.env.TRANSLATION_LANGUAGE)
 		}
 	},
 	"inputs": {
