@@ -8,6 +8,11 @@ const { tmpDir } = require('./config/temp-dir');
 const { buildWorkflow } = require('./lib/workflow-builder');
 
 function getRootDir() {
+  if (process.env.NODE_ENV === 'prod') {
+    console.log('NODE_ENV=prod, using current directory');
+    return '.';
+  }
+
   try {
     const root = execSync('git rev-parse --show-toplevel', { encoding: 'utf8' }).trim();
     console.log('Git found, using repository root');
