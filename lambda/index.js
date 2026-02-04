@@ -33,27 +33,20 @@ exports.handler = async (event) => {
 		repo: event.repo,
 		email: event.email,
 	};
-		try {
-			await executeWorkflow(config)
-				.then(({ error, stderr, stdout }) => {
-					if (stdout) console.log(`[STDOUT] ${stdout}`);
-					if (stderr) console.error(`[STDERR] ${stderr}`);
-					if (error) console.error(`Exec error: ${error.message}`);
-				})
-				.catch(({ error, stderr, stdout }) => {
-					if (stdout) console.log(`[STDOUT] ${stdout}`);
-					if (stderr) console.error(`[STDERR] ${stderr}`);
-					if (error) throw new Error(`Workflow failed: ${error?.message || stderr}`);
-				});
-			return {
-				statusCode: 200,
-				body: JSON.stringify({ message: 'Success' }),
-			};
-		} catch (error) {
-			console.error(`${error.message}`);
-			return {
-				statusCode: 500,
-				body: JSON.stringify({ message: 'Workflow execution failed' }),
-			};
-		}
+		await executeWorkflow(config)
+			.then(({ error, stderr, stdout }) => {
+				if (stdout) console.log(`[STDOUT] ${stdout}`);
+				if (stderr) console.error(`[STDERR] ${stderr}`);
+				if (error) throw new Error(`Workflow failed: ${error?.message || stderr}`);
+			})
+			.catch((err) => {
+				console.error(`[STDOUT] ${err.stdout || ''}`);
+				console.error(`[STDERR] ${err.stderr || ''}`);
+				console.error(`Workflow failed: ${err.error?.message || err}`);
+				throw err;
+			});
+		return {
+			statusCode: 200,
+			body: JSON.stringify({ message: 'Success' }),
+		};
 	}
