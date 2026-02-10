@@ -33,7 +33,8 @@ const deepwikiResponseSchema = () => {
 				errorMessage: "Must start with https://deepwiki.com/search/"
 			},
 			rootCause: {
-				type: "string",
+				type: "array",
+			items: { type: "string" },
 				description: "Root cause of the issue"
 			},
 			resolutionApproach: {
@@ -55,7 +56,8 @@ const deepwikiResponseSchema = () => {
 				description: "1-5 relevant keywords"
 			},
 			analogy: {
-				type: "string",
+				type: "array",
+				items: { type: "string" },
 				description: "Simple analogy for issue and resolution"
 			}
 		},

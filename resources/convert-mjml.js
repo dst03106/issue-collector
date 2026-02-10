@@ -31,17 +31,21 @@ const convertMJML = function () {
                       <mj-spacer/>
                       <mj-text mj-class="section-title">🔑 Keywords</mj-text>
                       <mj-text mj-class="section-content">${issue.json.keyword.join(', ')}</mj-text>
-                      <mj-text mj-class="section-title">🔄 Analogy</mj-text>
-                      <mj-text mj-class="section-content">${issue.json.analogy}</mj-text>
-                      <mj-text mj-class="section-title">🧾 Issue Description</mj-text>
-                      <mj-text mj-class="section-content">${issue.json.issueDescription}</mj-text>
-                      <mj-text mj-class="section-title">🧩 Root Cause</mj-text>
-                      <mj-text mj-class="section-content">${issue.json.rootCause}</mj-text>`;
+											`;
+
+			let analogy = `<mj-text mj-class="section-title">🔄 Analogy</mj-text>`;
+			analogy += createBulletedList(issue.json.analogy)	
+
+			let issueDescription = `<mj-text mj-class="section-title">🧾 Issue Description</mj-text>`;
+			issueDescription += createBulletedList(issue.json.issueDescription);
+
+			let rootCause = `<mj-text mj-class="section-title">🧩 Root Cause</mj-text>`
+			rootCause += createBulletedList(issue.json.rootCause);
+
       let resolutionApproach = `<mj-text mj-class="section-title">🛠️ Resolution Approach</mj-text><mj-text font-size="14px" line-height="1.6">`;
       resolutionApproach += createBulletedList(issue.json.resolutionApproach);
       resolutionApproach += '</mj-text>';
 
-      
       let issueSuitability = `<mj-text mj-class="section-title">✅ Issue Suitability: ${issue.json.issueSuitability.level}</mj-text><mj-text font-size="14px" line-height="1.6">`
       issueSuitability += createBulletedList(issue.json.issueSuitability.reasons);
       issueSuitability += '</mj-text>';
@@ -53,7 +57,11 @@ const convertMJML = function () {
       let issuelink = `<mj-text mj-class="section-title"><p>👉 Go to the Issue <a href="${issue.json.issueURL}">(Link)</a></p></mj-text>`;
       let deepwikiLink = `<mj-text mj-class="section-title"><p>🌀 Check the code-level explanation on Deepwiki <a href="${issue.json.deepwikiLink}">(Link)</a></p></mj-text>`;
 
-      issues.push(issueInfo + resolutionApproach + issueSuitability + technicalDifficulty + issuelink + deepwikiLink)
+      issues.push(
+          issueInfo + analogy + issueDescription +
+          rootCause + resolutionApproach + issueSuitability +
+          technicalDifficulty + issuelink + deepwikiLink
+      );
   }
 
   return {
