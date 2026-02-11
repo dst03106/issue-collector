@@ -1,5 +1,5 @@
 const titleGeneratorLangchainAgent = async () => {
-	const { createAgent, createMiddleware, modelRetryMiddleware } = require("langchain");
+	const { createAgent, createMiddleware, modelRetryMiddleware, providerStrategy } = require("langchain");
 
 	const languageModel = await this.getInputConnectionData('ai_languageModel', 0);
 
@@ -64,6 +64,7 @@ const titleGeneratorLangchainAgent = async () => {
 	});
 	const agent = createAgent({
 		model: languageModel,
+		responseFormat: providerStrategy(wrappedSchema),
 		middleware: [
 			validateResponseMiddleware,
 			modelRetryMiddleware({              

@@ -1,5 +1,5 @@
 const deepwikiLangchainAgent = async () => {
-	const { createAgent, createMiddleware, modelRetryMiddleware } = require("langchain");
+	const { createAgent, createMiddleware, modelRetryMiddleware, providerStrategy } = require("langchain");
 	const { AIMessage } = require("@langchain/core/messages");
 	const { StateGraph, START, END, Annotation, Send } = require("@langchain/langgraph");
 	const { ToolNode } = require("@langchain/langgraph/prebuilt");
@@ -127,6 +127,7 @@ const deepwikiLangchainAgent = async () => {
 
 	const agent = createAgent({
 		model: languageModel,
+		responseFormat: providerStrategy(wrappedSchema),
 		middleware: [
 			validateResponseMiddleware,
 			modelRetryMiddleware({              

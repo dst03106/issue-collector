@@ -1,5 +1,5 @@
 const issueAnalysisLangchainAgent = async () => {
-	const { createAgent, createMiddleware, modelRetryMiddleware } = require("langchain");
+	const { createAgent, createMiddleware, modelRetryMiddleware, providerStrategy } = require("langchain");
 
 	const outputParser = await this.getInputConnectionData('ai_outputParser', 0);
 	const languageModel = await this.getInputConnectionData('ai_languageModel', 0);
@@ -75,6 +75,7 @@ const issueAnalysisLangchainAgent = async () => {
 	});
 	const agent = createAgent({
 		model: languageModel,
+		responseFormat: providerStrategy(wrappedSchema),
 		middleware: [
 			validateResponseMiddleware,
 			modelRetryMiddleware({              
