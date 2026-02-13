@@ -113,8 +113,9 @@ function main() {
     const workflowPath = path.join(tmpDir, 'workflow.json');
     
     console.log('🔨 워크플로우 빌드 중...');
+    const workflowSourcePath = process.env.WORKFLOW_PATH || 'n8n.json';
     const buildConfig = {
-      workflowPath: path.join(rootDir, 'n8n.json'),
+      workflowPath: path.join(rootDir, workflowSourcePath),
       resourcesDir: path.join(rootDir, 'resources'),
       outputPath: workflowPath
     };
