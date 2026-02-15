@@ -44,7 +44,7 @@ exports.handler = async (event) => {
 				console.error('Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
   			console.error('Stack:', error.stack);
   			console.error('Message:', error.message);
-				throw err;
+				throw error;
 			});
 		return {
 			statusCode: 200,

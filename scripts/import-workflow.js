@@ -79,6 +79,20 @@ function createCredentialsFile(credPath) {
 		)
 	}
 
+	if (process.env.OPENAI_API_KEY && process.env.OPENAI_BASE_URL) {
+		credentials.push(
+			{
+				"id": "openAiApi",
+				"name": "OpenAi account", 
+				"type": "openAiApi", 
+				"data" : {
+					"apiKey" : process.env.OPENAI_API_KEY,
+					"url": process.env.OPENAI_BASE_URL, 
+				}
+			}
+		)
+	}
+
   fs.writeFileSync(credPath, JSON.stringify(credentials, null, 2), 'utf8');
   console.log(`✓ 자격 증명 파일 생성: ${credPath}`);
 }

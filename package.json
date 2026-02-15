@@ -14,6 +14,7 @@
   "_note_zod_pin": "n8n uses zod-class → requires Zod v3.x (no v4 support)",
   "scripts": {
     "import": "node -r dotenv/config scripts/import-workflow.js",
+    "import-prod": "WORKFLOW_PATH='lambda/n8n.json' node -r dotenv/config scripts/import-workflow.js",
 		"reset" : "npx n8n user-management:reset"
   }
 }

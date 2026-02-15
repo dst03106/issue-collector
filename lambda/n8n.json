@@ -7,7 +7,7 @@
       "name": "When clicking ‘Execute workflow’",
       "type": "n8n-nodes-base.manualTrigger",
       "position": [
-        816,
+        656,
         592
       ],
       "typeVersion": 1
@@ -20,7 +20,7 @@
       "name": "Load Repo Info",
       "type": "n8n-nodes-base.code",
       "position": [
-        1024,
+        864,
         592
       ],
       "typeVersion": 2
@@ -36,7 +36,7 @@
       "name": "Get Issue From Github",
       "type": "n8n-nodes-base.graphql",
       "position": [
-        1216,
+        1040,
         592
       ],
       "typeVersion": 1.1,
@@ -204,7 +204,7 @@
       "parameters": {
         "code": {
           "execute": {
-            "code": "const { createAgent, createMiddleware, modelRetryMiddleware, providerStrategy } = require(\"langchain\");\nconst { traceable } = require(\"langsmith/traceable\");\nconst { AIMessage } = require(\"@langchain/core/messages\");\nconst { StateGraph, START, END, Annotation, Send } = require(\"@langchain/langgraph\");\nconst { ToolNode } = require(\"@langchain/langgraph/prebuilt\");\nconst { MultiServerMCPClient } = require(\"@langchain/mcp-adapters\");\n\nconst languageModel = await this.getInputConnectionData('ai_languageModel', 0);\n\nconst mcpClient = new MultiServerMCPClient({  \n\tdeepwiki: {\n\t\ttransport: \"http\",\n\t\turl: \"https://mcp.deepwiki.com/mcp\",\n\t},\n});\nconst tools = await mcpClient.getTools()\nconst askQuestionTool = tools.filter(t => t.name === \"ask_question\")[0];\n\nconst { owner, name } = $('Load Repo Info').item.json;\nconst repoName = `${owner}/${name}`;\nconst issues = $('get Top Fit Issues').item.json.issues;\n\nconst DeepwikiResponseSchema = $('Deepwiki Response Schema').item.json;\nconst wrappedSchema = {\n\ttype: \"object\",\n\tproperties: {\n\t\toutput: DeepwikiResponseSchema\n\t},\n\trequired: [\"output\"]\n};\n\nconst getLanguageDisplayName = (code) => {\n\ttry {\n\t\treturn new Intl.DisplayNames([code], { type: 'language' }).of(code);\n\t} catch {\n\t\treturn '';\n\t}\n};\n\nconst buildUserPrompt = (deepwikiResponse) => `\n\t[ROLE]\n\tYou are an AI assistant that processes DeepWiki GitHub issue analysis.\n\t\n\t[OUTPUT RULES]\n\tYou must format your output as a JSON value that adheres to a given \"JSON Schema\" instance.\n\t\"JSON Schema\" is a declarative language that allows you to annotate and validate JSON documents.\n\tDo not include markdown code blocks in the output.\n\tOutput ONLY the JSON object. No additional text.\n\n\t[TRANSLATE EXAMPLE]\n\tko-KR -> ${getLanguageDisplayName(\"ko-KR\")}\n\n\t[JSON SCHEMA]\n\t${JSON.stringify(wrappedSchema, null, 2)}\n\n\t[TASK]\n\tExtract and return ONLY a JSON object following the exact schema.\n\tPreserve the full length and content of the original text rather than summarizing.\n\n\t[REQUIREMENTS]\n\t- All content must be in \"ko-KR\"\n\t- translationLanguageCode should be \"ko-KR\"\n\t- deepwikiLink must start with https://deepwiki.com/\n\t- technicalDifficulty.level must be one of: High, Medium, Low\n\t- keyword should contain 1-5 relevant keywords\n\n\t[EXAMPLE OUTPUT]\n\t{\n\t\t\"output\": {\n\t\t\t\"translationLanguageCode\": \"en\",\n\t\t\t\"deepwikiLink\": \"https://deepwiki.com/search/here-is-a-github-issue-title-s_d2cf1a6c-1109-479c-986c-40cc2fa1f1c1\",\n\t\t\t\"rootCause\": \"Memory leak occurs during component rendering due to missing cleanup\",\n\t\t\t\"resolutionApproach\": [\n\t\t\t\t\"Add useEffect cleanup function\",\n\t\t\t\t\"Implement event listener removal logic\"\n\t\t\t],\n\t\t\t\"technicalDifficulty\": {\n\t\t\t\t\"level\": \"Medium\",\n\t\t\t\t\"reasons\": [\n\t\t\t\t\t\"Requires understanding of React lifecycle\",\n\t\t\t\t\t\"Need memory profiling experience\"\n\t\t\t\t]\n\t\t\t},\n\t\t\t\"summary\": \"Resolve React component memory leak by implementing proper cleanup function\",\n\t\t\t\"keyword\": [\"React\", \"memory leak\", \"useEffect\", \"cleanup\"],\n\t\t\t\"analogy\": \"Like leaving a faucet running - without cleanup, memory keeps leaking continuously\"\n\t\t}\n\t}\n\n\t[OUTPUT FORMAT]\n\t- Return JSON only\n\t- No extra text\n\n\t[INPUT]\n\tDeepWiki Analysis:\n\t${deepwikiResponse}\n`;\n\nasync function deepwikiToolNode({ issue }) {\n\tconst toolCall = {\n\t\tname: \"ask_question\",\n\t\targs: {\n\t\t\trepoName: repoName,\n\t\t\tquestion: `Here is a GitHub issue.\n\t\t\t\t Title: ${issue.issueTitle}\n\t\t\t\t Body: ${issue.issueDescription}\n\t\t\t\t How can this issue be resolved, what is its root cause, what is the recommended resolution approach, what is the technical difficulty, and what is a simple analogy for the issue and its resolution approach? Please provide the answer in ko-KR.`\n\t\t},\n\t\tid: `call_${Date.now()}`,\n\t\ttype: \"tool\"\n\t};\n\tconst aiMessage = new AIMessage({\n\t\tcontent: \"\",\n\t\ttool_calls: [toolCall]\n\t});\n\tconst result = await new ToolNode([askQuestionTool]).invoke({\n\t\tmessages: [aiMessage]\n\t});\n\treturn { deepwikiResponses: [{ \n\t\tdeepwikiResponse: result.messages.at(-1)?.content,\n\t\tissueURL: issue.issueURL\t\n\t}]};\n}\n\nclass TimeoutError extends Error {\n\tconstructor(message = 'Operation timed out') {\n\t\tsuper(message);\n\t\tthis.name = 'TimeoutError';\n\t}\n}\n\nconst timeoutMiddleware = (timeout = 90 * 1000) => {\n\tconst middlewareName = \"timeoutMiddleware\";\n\treturn createMiddleware({\n\t\tname: middlewareName,\n\t\twrapModelCall: async (request, handler) => {\n\t\t\tlet timeoutId;\n\t\t\ttry {\n\t\t\t\treturn await Promise.race([\n\t\t\t\t\thandler(request),\n\t\t\t\t\tnew Promise((_, reject) => {\n\t\t\t\t\t\ttimeoutId = setTimeout(() => reject(new TimeoutError()), timeout);\n\t\t\t\t\t})\n\t\t\t\t]);\n\t\t\t} finally {\n\t\t\t\tconsole.log(\"clearTimeout\", timeoutId);\n\t\t\t\tclearTimeout(timeoutId);\n\t\t\t}\n\t\t},\n\t});\n};\n\nconst jitterMiddleware = createMiddleware({\n\tname: \"jitterMiddleware\",\n\twrapModelCall: async (request, handler) => {\n\t\tconst delay = Math.floor(Math.random() * 100);\n\t\tawait new Promise(resolve => setTimeout(resolve, delay));\n\t\treturn handler(request);\n\t}\n});\n\nconst validateResponseMiddleware = createMiddleware({\n\tname: \"validateResponseDeepwikiMiddleware\",\n\tafterModel: {\n\t\tcanJumpTo: [\"model\"],\n\t\thook: (state) => {\n\t\t\tconst lastMessage = state.messages[state.messages.length - 1];\n\t\t\tif (!lastMessage.content?.trim()) {\n\t\t\t\treturn { jumpTo: \"model\" }\n\t\t\t}\n\t\t\treturn;\n\t\t}\n\t}\n});\n\nconst agent = createAgent({\n\tmodel: languageModel,\n\tresponseFormat: providerStrategy(wrappedSchema),\n\tmiddleware: [\n\t\tvalidateResponseMiddleware,\n\t\tmodelRetryMiddleware({\n\t\t\tmaxRetries: 2,\n\t\t\tbackoffFactor: 2.0,\n\t\t\tinitialDelayMs: 5 * 1000,\n\t\t\tjitter: true,\n\t\t\tonFailure: \"error\",\n\t\t}),\n\t\tjitterMiddleware,\n\t\ttimeoutMiddleware(90 * 1000),\n\t]\n});\nconst outputParser = await this.getInputConnectionData('ai_outputParser', 0);\n\nasync function reasonNode({ deepwikiResponse, issueURL }) {\n\tconst userPrompt = buildUserPrompt(deepwikiResponse);\n\tconst reasonResult = await agent.invoke({ messages: [{ role: \"user\", content: userPrompt }] });\n\tconst aiMessage = reasonResult.messages.findLast(m => m.type === \"ai\")?.content;\n\tconst parsedMessage = await outputParser.parse(aiMessage);\n\tparsedMessage.output.issueURL = issueURL\n\treturn { finalAnswers: [parsedMessage.output] };\n}\n\nconst MessagesState = Annotation.Root({\n\tdeepwikiResponses: Annotation({\n\t\treducer: (current, update) => current.concat(update),\n\t\tdefault: () => [],\n\t}),\n\tfinalAnswers: Annotation({\n\t\treducer: (current, update) => current.concat(update),\n\t\tdefault: () => [],\n\t}),\n});\nconst workflow = new StateGraph(MessagesState)\n\t.addNode(\"deepwikiTool\", deepwikiToolNode)\n\t.addNode(\"reason\", reasonNode)\n\t.addConditionalEdges(START, (_state) => {\n\t\treturn issues.map((issue) => new Send(\"deepwikiTool\", { issue }));\n\t})\n\t.addConditionalEdges(\"deepwikiTool\", ({ deepwikiResponses }) => {\n\t\treturn deepwikiResponses.map(({ deepwikiResponse, issueURL }) => new Send(\"reason\", { deepwikiResponse, issueURL }));\n\t})\n\t.addEdge(\"reason\", END)\n\t.compile();\n\nconst config = $('Get Workflow Run Id').first().json;\nconst result = await traceable(\n\tasync () => {\n\t\treturn await workflow.invoke({});\n\t},\n\t{ \n\t\tname: \"DeepWiki Analysis\",\n\t\t...config\n\t},\n)();\nreturn result.finalAnswers;"
+            "code": "const { createAgent, createMiddleware, modelRetryMiddleware, providerStrategy } = require(\"langchain\");\nconst { traceable } = require(\"langsmith/traceable\");\nconst { AIMessage } = require(\"@langchain/core/messages\");\nconst { StateGraph, START, END, Annotation, Send } = require(\"@langchain/langgraph\");\nconst { ToolNode } = require(\"@langchain/langgraph/prebuilt\");\nconst { MultiServerMCPClient } = require(\"@langchain/mcp-adapters\");\n\nconst languageModel = await this.getInputConnectionData('ai_languageModel', 0);\n\nconst mcpClient = new MultiServerMCPClient({  \n\tdeepwiki: {\n\t\ttransport: \"http\",\n\t\turl: \"https://mcp.deepwiki.com/mcp\",\n\t},\n});\nconst tools = await mcpClient.getTools()\nconst askQuestionTool = tools.filter(t => t.name === \"ask_question\")[0];\n\nconst { owner, name } = $('Load Repo Info').item.json;\nconst repoName = `${owner}/${name}`;\nconst issues = $('get Top Fit Issues').item.json.issues;\n\nconst DeepwikiResponseSchema = $('Deepwiki Response Schema').item.json;\nconst wrappedSchema = {\n\ttype: \"object\",\n\tproperties: {\n\t\toutput: DeepwikiResponseSchema\n\t},\n\trequired: [\"output\"]\n};\n\nconst getLanguageDisplayName = (code) => {\n\ttry {\n\t\treturn new Intl.DisplayNames([code], { type: 'language' }).of(code);\n\t} catch {\n\t\treturn '';\n\t}\n};\n\nconst buildUserPrompt = (deepwikiResponse) => `\n\t[ROLE]\n\tYou are an AI assistant that processes DeepWiki GitHub issue analysis.\n\t\n\t[OUTPUT RULES]\n\tYou must format your output as a JSON value that adheres to a given \"JSON Schema\" instance.\n\t\"JSON Schema\" is a declarative language that allows you to annotate and validate JSON documents.\n\tDo not include markdown code blocks in the output.\n\tOutput ONLY the JSON object. No additional text.\n\n\t[TRANSLATE EXAMPLE]\n\tko-KR -> ${getLanguageDisplayName(\"ko-KR\")}\n\n\t[JSON SCHEMA]\n\t${JSON.stringify(wrappedSchema, null, 2)}\n\n\t[TASK]\n\tExtract and return ONLY a JSON object following the exact schema.\n\tPreserve the full length and content of the original text rather than summarizing.\n\n\t[REQUIREMENTS]\n\t- All content must be in \"ko-KR\"\n\t- translationLanguageCode should be \"ko-KR\"\n\t- deepwikiLink must start with https://deepwiki.com/\n\t- technicalDifficulty.level must be one of: High, Medium, Low\n\t- keyword should contain 1-5 relevant keywords\n\n\t[EXAMPLE OUTPUT]\n\t{\n\t\t\"output\": {\n\t\t\t\"translationLanguageCode\": \"en\",\n\t\t\t\"deepwikiLink\": \"https://deepwiki.com/search/here-is-a-github-issue-title-s_d2cf1a6c-1109-479c-986c-40cc2fa1f1c1\",\n\t\t\t\"rootCause\": \"Memory leak occurs during component rendering due to missing cleanup\",\n\t\t\t\"resolutionApproach\": [\n\t\t\t\t\"Add useEffect cleanup function\",\n\t\t\t\t\"Implement event listener removal logic\"\n\t\t\t],\n\t\t\t\"technicalDifficulty\": {\n\t\t\t\t\"level\": \"Medium\",\n\t\t\t\t\"reasons\": [\n\t\t\t\t\t\"Requires understanding of React lifecycle\",\n\t\t\t\t\t\"Need memory profiling experience\"\n\t\t\t\t]\n\t\t\t},\n\t\t\t\"summary\": \"Resolve React component memory leak by implementing proper cleanup function\",\n\t\t\t\"keyword\": [\"React\", \"memory leak\", \"useEffect\", \"cleanup\"],\n\t\t\t\"analogy\": \"Like leaving a faucet running - without cleanup, memory keeps leaking continuously\"\n\t\t}\n\t}\n\n\t[OUTPUT FORMAT]\n\t- Return JSON only\n\t- No extra text\n\n\t[INPUT]\n\tDeepWiki Analysis:\n\t${deepwikiResponse}\n`;\n\nasync function deepwikiToolNode({ issue }) {\n\tconst toolCall = {\n\t\tname: \"ask_question\",\n\t\targs: {\n\t\t\trepoName: repoName,\n\t\t\tquestion: `Here is a GitHub issue.\n\t\t\t\t Title: ${issue.issueTitle}\n\t\t\t\t Body: ${issue.issueDescription}\n\t\t\t\t How can this issue be resolved, what is its root cause, what is the recommended resolution approach, what is the technical difficulty, and what is a simple analogy for the issue and its resolution approach? Please provide the answer in ko-KR.`\n\t\t},\n\t\tid: `call_${Date.now()}`,\n\t\ttype: \"tool\"\n\t};\n\tconst aiMessage = new AIMessage({\n\t\tcontent: \"\",\n\t\ttool_calls: [toolCall]\n\t});\n\tconst result = await new ToolNode([askQuestionTool]).invoke({\n\t\tmessages: [aiMessage]\n\t});\n\treturn { deepwikiResponses: [{ \n\t\tdeepwikiResponse: result.messages.at(-1)?.content,\n\t\tissueURL: issue.issueURL\t\n\t}]};\n}\n\nclass TimeoutError extends Error {\n\tconstructor(message = 'Operation timed out') {\n\t\tsuper(message);\n\t\tthis.name = 'TimeoutError';\n\t}\n}\n\nconst timeoutMiddleware = (timeout = 90 * 1000) => {\n\tconst middlewareName = \"timeoutMiddleware\";\n\treturn createMiddleware({\n\t\tname: middlewareName,\n\t\twrapModelCall: async (request, handler) => {\n\t\t\tlet timeoutObj;\n\t\t\ttry {\n\t\t\t\treturn await Promise.race([\n\t\t\t\t\thandler(request),\n\t\t\t\t\tnew Promise((_, reject) => {\n\t\t\t\t\t\ttimeoutObj = setTimeout(() => reject(new TimeoutError()), timeout);\n\t\t\t\t\t})\n\t\t\t\t]);\n\t\t\t} finally {\n\t\t\t\tclearTimeout(timeoutObj);\n\t\t\t}\n\t\t},\n\t});\n};\n\nconst jitterMiddleware = createMiddleware({\n\tname: \"jitterMiddleware\",\n\twrapModelCall: async (request, handler) => {\n\t\tconst delay = Math.floor(Math.random() * 100);\n\t\tawait new Promise(resolve => setTimeout(resolve, delay));\n\t\treturn handler(request);\n\t}\n});\n\nconst validateResponseMiddleware = createMiddleware({\n\tname: \"validateResponseDeepwikiMiddleware\",\n\tafterModel: {\n\t\tcanJumpTo: [\"model\"],\n\t\thook: (state) => {\n\t\t\tconst lastMessage = state.messages[state.messages.length - 1];\n\t\t\tif (!lastMessage.content?.trim()) {\n\t\t\t\treturn { jumpTo: \"model\" }\n\t\t\t}\n\t\t\treturn;\n\t\t}\n\t}\n});\n\nconst agent = createAgent({\n\tmodel: languageModel,\n\tresponseFormat: providerStrategy(wrappedSchema),\n\tmiddleware: [\n\t\tvalidateResponseMiddleware,\n\t\tmodelRetryMiddleware({\n\t\t\tmaxRetries: 2,\n\t\t\tbackoffFactor: 2.0,\n\t\t\tinitialDelayMs: 5 * 1000,\n\t\t\tjitter: true,\n\t\t\tonFailure: \"error\",\n\t\t}),\n\t\tjitterMiddleware,\n\t\ttimeoutMiddleware(120 * 1000),\n\t]\n});\nconst outputParser = await this.getInputConnectionData('ai_outputParser', 0);\n\nasync function reasonNode({ deepwikiResponse, issueURL }) {\n\tconst userPrompt = buildUserPrompt(deepwikiResponse);\n\tconst reasonResult = await agent.invoke({ messages: [{ role: \"user\", content: userPrompt }] });\n\tconst aiMessage = reasonResult.messages.findLast(m => m.type === \"ai\")?.content;\n\tconst parsedMessage = await outputParser.parse(aiMessage);\n\tparsedMessage.output.issueURL = issueURL\n\treturn { finalAnswers: [parsedMessage.output] };\n}\n\nconst MessagesState = Annotation.Root({\n\tdeepwikiResponses: Annotation({\n\t\treducer: (current, update) => current.concat(update),\n\t\tdefault: () => [],\n\t}),\n\tfinalAnswers: Annotation({\n\t\treducer: (current, update) => current.concat(update),\n\t\tdefault: () => [],\n\t}),\n});\nconst workflow = new StateGraph(MessagesState)\n\t.addNode(\"deepwikiTool\", deepwikiToolNode)\n\t.addNode(\"reason\", reasonNode)\n\t.addConditionalEdges(START, (_state) => {\n\t\treturn issues.map((issue) => new Send(\"deepwikiTool\", { issue }));\n\t})\n\t.addConditionalEdges(\"deepwikiTool\", ({ deepwikiResponses }) => {\n\t\treturn deepwikiResponses.map(({ deepwikiResponse, issueURL }) => new Send(\"reason\", { deepwikiResponse, issueURL }));\n\t})\n\t.addEdge(\"reason\", END)\n\t.compile();\n\nconst config = $('Get Workflow Run Id').first().json;\nconst result = await traceable(\n\tasync () => {\n\t\treturn await workflow.invoke({});\n\t},\n\t{ \n\t\tname: \"DeepWiki Analysis\",\n\t\t...config\n\t},\n)();\nreturn result.finalAnswers;"
           }
         },
         "inputs": {
@@ -247,7 +247,7 @@
       "parameters": {
         "code": {
           "execute": {
-            "code": "const { createAgent, createMiddleware, modelRetryMiddleware, providerStrategy } = require(\"langchain\");\nconst { traceable } = require(\"langsmith/traceable\");\n \nconst outputParser = await this.getInputConnectionData('ai_outputParser', 0);\nconst languageModel = await this.getInputConnectionData('ai_languageModel', 0);\n\nconst repositoryInfo = $('Get Issue From Github').item.json.data.repository;\nconst issues = repositoryInfo.issues.nodes;\nconst release =\trepositoryInfo.releases.nodes[0];\n\nconst IssueAnalysisSchema = $('Issue Analysis Schema').item.json;\nconst wrappedSchema = {\n\ttype: \"object\",\n\tproperties: {\n\t\toutput: IssueAnalysisSchema \n\t},\n\trequired: [\"output\"]\n};\n\nconst getLanguageDisplayName = (code) => {\n\ttry {\n\t\treturn new Intl.DisplayNames([code], { type: 'language' }).of(code);\n\t} catch {\n\t\treturn '';\n\t}\n};\n\nconst userPrompt = `\n\t\t[ROLE]\n\t\tYou are a 10-year experienced developer with extensive open-source contribution experience.\n\n\t\t[OUTPUT RULES]\n\t\tYou must format your output as a JSON value that adheres to a given \"JSON Schema\" instance.\n\t\t\"JSON Schema\" is a declarative language that allows you to annotate and validate JSON documents.\n\t\tDo not include markdown code blocks in the output.\n\t\tKeep keys in English.\n\t\tTranslate all user-facing strings into ko-KR.\n\n\t[TRANSLATE EXAMPLE]\n\tko-KR -> ${getLanguageDisplayName(\"ko-KR\")}\n\n\t\t[JSON SCHEMA]\n\t\t${JSON.stringify(wrappedSchema, null, 2)}\n\n\t\t[TASK]\n\t1) First, summarize the key changes from the latest release (1-3 lines, in ko-KR).\n\t2) For each issue, analyze and summarize the issueDescription in 1-2 concise lines (in ko-KR), capturing the core problem or feature request - do NOT copy the original description verbatim.\n\t\t3) Classify each issue's contribution opportunity level based on the criteria below.\n\t\t4) For each issue, provide level and reasons (2-4 reasons).\n\t\t5) Finally, select the top 3-5 most suitable issues and output as JSON.\n\n\t\t[CRITERIA FOR GOOD CONTRIBUTION OPPORTUNITIES]\n\t\t1. Issues with detailed and well-written content\n\t\t2. Issues where bug/error logs and reproduction steps are clearly specified\n\t\t3. Issues where the location of suspicious source code has been identified\n\t\t4. Issues where the maintainer has confirmed the problem or requested contributions\n\t\t5. Issues directly created by the maintainer\n\t\t6. Issues with \"good first issue\" label (no \"blocked\" or \"wait-for-triage\" labels)\n\t\t7. Issues without an existing PR\n\n\t\t[OUTPUT FORMAT]\n\t\t- level: \"high\" | \"medium\" | \"low\"\n\t\t- reasons: array of 2-4 reasons explaining the level\n\t\t- Output JSON only, no extra text\n\n\t\t[INPUT]\n\t\t[ISSUES]\n\t\t${JSON.stringify(issues, null, 2)}\n\n\t\t[RELEASE]\n\t\t${JSON.stringify(release)}\n\t`.trim();\n\nclass TimeoutError extends Error {\n\tconstructor(message = 'Operation timed out') {\n\t\tsuper(message);\n\t\tthis.name = 'TimeoutError';\n\t}\n}\n\nconst timeoutMiddleware = (timeout = 90 * 1000) => {\n\tconst middlewareName = \"timeoutMiddleware\";\n\treturn createMiddleware({\n\t\tname: middlewareName,\n\t\twrapModelCall: async (request, handler) => {\n\t\t\tlet timeoutId;\n\t\t\ttry {\n\t\t\t\treturn await Promise.race([\n\t\t\t\t\thandler(request),\n\t\t\t\t\tnew Promise((_, reject) => {\n\t\t\t\t\t\ttimeoutId = setTimeout(() => reject(new TimeoutError()), timeout);\n\t\t\t\t\t})\n\t\t\t\t]);\n\t\t\t} finally {\n\t\t\t\tconsole.log(\"clearTimeout\", timeoutId);\n\t\t\t\tclearTimeout(timeoutId);\n\t\t\t}\n\t\t},\n\t});\n};\n\nconst validateResponseMiddleware = createMiddleware({\n\tname: \"validateResponseMiddleware\",\n\tafterModel: {\n\t\tcanJumpTo: [\"model\"],\n\t\thook: (state) => {\n\t\t\tconst lastMessage = state.messages[state.messages.length - 1];\n\t\t\tif (!lastMessage.content?.trim()) {\n\t\t\t\treturn { jumpTo: \"model\" }\n\t\t\t}\n\t\t\treturn;\n\t\t}\n\t}\n});\nconst agent = createAgent({\n\tmodel: languageModel,\n\tresponseFormat: providerStrategy(wrappedSchema),\n\tmiddleware: [\n\t\tvalidateResponseMiddleware,\n\t\tmodelRetryMiddleware({\n\t\t\tmaxRetries: 2,\n\t\t\tbackoffFactor: 2.0,\n\t\t\tinitialDelayMs: 20000,\n\t\t\tjitter: true,\n\t\t\tonFailure: \"error\",\n\t\t}),\n\t\ttimeoutMiddleware(90 * 1000),\n\t]\n});\nconst config = $('Get Workflow Run Id').first().json;\nconst result = await traceable(\n\t\tasync () => {\n\t\t\t\treturn await agent.invoke({ \n\t\t\t\t\tmessages: [{ role: \"user\", content: userPrompt }],\n\t\t\t\t});\n\t\t},\n\t\t{ \n\t\t\tname: \"Issue Analysis\",\n\t\t\t...config\n\t\t},\n)();\nconst aiMessage = result.messages.findLast(m => m.type === \"ai\")?.content; \n\nconst parsedMessage = await outputParser.parse(aiMessage)\nparsedMessage.output.latestRelease = {\n\t...parsedMessage.output.latestRelease,\n\turl: release.url,\n\tname: release.name,\n};\nreturn [parsedMessage.output];"
+            "code": "const { createAgent, createMiddleware, modelRetryMiddleware, providerStrategy } = require(\"langchain\");\nconst { traceable } = require(\"langsmith/traceable\");\n \nconst outputParser = await this.getInputConnectionData('ai_outputParser', 0);\nconst languageModel = await this.getInputConnectionData('ai_languageModel', 0);\n\nconst repositoryInfo = $('Get Issue From Github').item.json.data.repository;\nconst issues = repositoryInfo.issues.nodes;\nconst release =\trepositoryInfo.releases.nodes[0];\n\nconst IssueAnalysisSchema = $('Issue Analysis Schema').item.json;\nconst wrappedSchema = {\n\ttype: \"object\",\n\tproperties: {\n\t\toutput: IssueAnalysisSchema \n\t},\n\trequired: [\"output\"]\n};\n\nconst getLanguageDisplayName = (code) => {\n\ttry {\n\t\treturn new Intl.DisplayNames([code], { type: 'language' }).of(code);\n\t} catch {\n\t\treturn '';\n\t}\n};\n\nconst userPrompt = `\n\t\t[ROLE]\n\t\tYou are a 10-year experienced developer with extensive open-source contribution experience.\n\n\t\t[OUTPUT RULES]\n\t\tYou must format your output as a JSON value that adheres to a given \"JSON Schema\" instance.\n\t\t\"JSON Schema\" is a declarative language that allows you to annotate and validate JSON documents.\n\t\tDo not include markdown code blocks in the output.\n\t\tKeep keys in English.\n\t\tTranslate all user-facing strings into ko-KR.\n\n\t[TRANSLATE EXAMPLE]\n\tko-KR -> ${getLanguageDisplayName(\"ko-KR\")}\n\n\t\t[JSON SCHEMA]\n\t\t${JSON.stringify(wrappedSchema, null, 2)}\n\n\t\t[TASK]\n\t1) First, summarize the key changes from the latest release (1-3 lines, in ko-KR).\n\t2) For each issue, analyze and summarize the issueDescription in 1-2 concise lines (in ko-KR), capturing the core problem or feature request - do NOT copy the original description verbatim.\n\t\t3) Classify each issue's contribution opportunity level based on the criteria below.\n\t\t4) For each issue, provide level and reasons (2-4 reasons).\n\t\t5) Finally, select the top 3-5 most suitable issues and output as JSON.\n\n\t\t[CRITERIA FOR GOOD CONTRIBUTION OPPORTUNITIES]\n\t\t1. Issues with detailed and well-written content\n\t\t2. Issues where bug/error logs and reproduction steps are clearly specified\n\t\t3. Issues where the location of suspicious source code has been identified\n\t\t4. Issues where the maintainer has confirmed the problem or requested contributions\n\t\t5. Issues directly created by the maintainer\n\t\t6. Issues with \"good first issue\" label (no \"blocked\" or \"wait-for-triage\" labels)\n\t\t7. Issues without an existing PR\n\n\t\t[OUTPUT FORMAT]\n\t\t- level: \"high\" | \"medium\" | \"low\"\n\t\t- reasons: array of 2-4 reasons explaining the level\n\t\t- Output JSON only, no extra text\n\n\t\t[INPUT]\n\t\t[ISSUES]\n\t\t${JSON.stringify(issues, null, 2)}\n\n\t\t[RELEASE]\n\t\t${JSON.stringify(release)}\n\t`.trim();\n\nclass TimeoutError extends Error {\n\tconstructor(message = 'Operation timed out') {\n\t\tsuper(message);\n\t\tthis.name = 'TimeoutError';\n\t}\n}\n\nconst timeoutMiddleware = (timeout = 90 * 1000) => {\n\tconst middlewareName = \"timeoutMiddleware\";\n\treturn createMiddleware({\n\t\tname: middlewareName,\n\t\twrapModelCall: async (request, handler) => {\n\t\t\tlet timeoutObj;\n\t\t\ttry {\n\t\t\t\treturn await Promise.race([\n\t\t\t\t\thandler(request),\n\t\t\t\t\tnew Promise((_, reject) => {\n\t\t\t\t\t\ttimeoutObj = setTimeout(() => reject(new TimeoutError()), timeout);\n\t\t\t\t\t})\n\t\t\t\t]);\n\t\t\t} finally {\n\t\t\t\tclearTimeout(timeoutObj);\n\t\t\t}\n\t\t},\n\t});\n};\n\nconst validateResponseMiddleware = createMiddleware({\n\tname: \"validateResponseMiddleware\",\n\tafterModel: {\n\t\tcanJumpTo: [\"model\"],\n\t\thook: (state) => {\n\t\t\tconst lastMessage = state.messages[state.messages.length - 1];\n\t\t\tif (!lastMessage.content?.trim()) {\n\t\t\t\treturn { jumpTo: \"model\" }\n\t\t\t}\n\t\t\treturn;\n\t\t}\n\t}\n});\nconst agent = createAgent({\n\tmodel: languageModel,\n\tresponseFormat: providerStrategy(wrappedSchema),\n\tmiddleware: [\n\t\tvalidateResponseMiddleware,\n\t\tmodelRetryMiddleware({\n\t\t\tmaxRetries: 2,\n\t\t\tbackoffFactor: 2.0,\n\t\t\tinitialDelayMs: 20000,\n\t\t\tjitter: true,\n\t\t\tonFailure: \"error\",\n\t\t}),\n\t\ttimeoutMiddleware(120 * 1000),\n\t]\n});\nconst config = $('Get Workflow Run Id').first().json;\nconst result = await traceable(\n\t\tasync () => {\n\t\t\t\treturn await agent.invoke({ \n\t\t\t\t\tmessages: [{ role: \"user\", content: userPrompt }],\n\t\t\t\t});\n\t\t},\n\t\t{ \n\t\t\tname: \"Issue Analysis\",\n\t\t\t...config\n\t\t},\n)();\nconst aiMessage = result.messages.findLast(m => m.type === \"ai\")?.content; \n\nconst parsedMessage = await outputParser.parse(aiMessage)\nparsedMessage.output.latestRelease = {\n\t...parsedMessage.output.latestRelease,\n\turl: release.url,\n\tname: release.name,\n};\nreturn [parsedMessage.output];"
           }
         },
         "inputs": {
@@ -290,7 +290,7 @@
       "parameters": {
         "code": {
           "execute": {
-            "code": "const { createAgent, createMiddleware, modelRetryMiddleware, providerStrategy } = require(\"langchain\");\nconst { traceable } = require(\"langsmith/traceable\");\n\nconst languageModel = await this.getInputConnectionData('ai_languageModel', 0);\n\nconst outputParser = await this.getInputConnectionData('ai_outputParser', 0);\n\nconst issue = $('Merge').first().json;\n\nconst NewsletterTitleSchema = $('Title Generator Schema').item.json;\nconst wrappedSchema = {\n\ttype: \"object\",\n\tproperties: {\n\t\toutput: NewsletterTitleSchema \n\t},\n\trequired: [\"output\"]\n};\n\nconst getLanguageDisplayName = (code) => {\n\ttry {\n\t\treturn new Intl.DisplayNames([code], { type: 'language' }).of(code);\n\t} catch {\n\t\treturn '';\n\t}\n};\n\nconst userPrompt = `\n\t\t\t[ROLE]\n\t\t\tYou are an AI assistant who creates newsletter titles based on GitHub issues.\n\n\t\t\t[OUTPUT RULES]\n\t\t\tYou must format your output as a JSON value that adheres to a given \"JSON Schema\" instance.\n\t\t\t\"JSON Schema\" is a declarative language that allows you to annotate and validate JSON documents.\n\t\t\tDo not include markdown code blocks in the output.\n\t\t\tTranslate all user-facing string values into ko-KR. Keep the keys in English.\n\n\t\t\t[TRANSLATE EXAMPLE]\n\t\t\tko-KR -> ${getLanguageDisplayName(\"ko-KR\")}\n\n\t\t\t[JSON SCHEMA]\n\t\t\t${JSON.stringify(wrappedSchema, null, 2)}\n\n\t\t\t[TASK]\n\t\t\t1. Read the provided GitHub issue.\n\t\t\t2. Generate a short, catchy newsletter title.\n\t\t\t3. The title should meet these criteria:\n\t\t\t\t\t- Include a relevant emoji at the beginning.\n\t\t\t\t\t- Be easy for a non-technical audience to understand.\n\t\t\t\t\t- Be fun and intriguing to maximize open rates.\n\t\t\t4. Translate the final title into ko-KR.\n\n\t\t\t[INPUT]\n\t\t\tPlease create a newsletter title for the issue below.\n\n\t\t\t### Issue\n\t\t\tTitle: ${issue.issueTitle}\n\t\t\tBody: ${issue.issueDescription}\n\t\t\tSummary: ${issue.summary}\n\t\t\tAnalogy: ${issue.analogy}\n\n\t\t\tOutput:\n\t`;\nclass TimeoutError extends Error {\n\tconstructor(message = 'Operation timed out') {\n\t\tsuper(message);\n\t\tthis.name = 'TimeoutError';\n\t}\n}\n\nconst timeoutMiddleware = (timeout = 90 * 1000) => {\n\tconst middlewareName = \"timeoutMiddleware\";\n\treturn createMiddleware({\n\t\tname: middlewareName,\n\t\twrapModelCall: async (request, handler) => {\n\t\t\tlet timeoutId;\n\t\t\ttry {\n\t\t\t\treturn await Promise.race([\n\t\t\t\t\thandler(request),\n\t\t\t\t\tnew Promise((_, reject) => {\n\t\t\t\t\t\ttimeoutId = setTimeout(() => reject(new TimeoutError()), timeout);\n\t\t\t\t\t})\n\t\t\t\t]);\n\t\t\t} finally {\n\t\t\t\tconsole.log(\"clearTimeout\", timeoutId);\n\t\t\t\tclearTimeout(timeoutId);\n\t\t\t}\n\t\t},\n\t});\n};\n\nconst validateResponseMiddleware = createMiddleware({\n\tname: \"validateResponseTitleMiddleware\",\n\tafterModel: {\n\t\tcanJumpTo: [\"model\"],\n\t\thook: (state) => {\n\t\t\tconst lastMessage = state.messages[state.messages.length - 1];\n\t\t\tif (!lastMessage.content?.trim()) {\n\t\t\t\treturn { jumpTo: \"model\" }\n\t\t\t}\n\t\t\treturn;\n\t\t}\n\t}\n});\nconst agent = createAgent({\n\tmodel: languageModel,\n\tresponseFormat: providerStrategy(wrappedSchema),\n\tmiddleware: [\n\t\tvalidateResponseMiddleware,\n\t\tmodelRetryMiddleware({\n\t\t\tmaxRetries: 2,\n\t\t\tbackoffFactor: 2.0,\n\t\t\tinitialDelayMs: 20000,\n\t\t\tjitter: true,\n\t\t\tonFailure: \"error\",\n\t\t}),\n\t\ttimeoutMiddleware(90 * 1000),\n\t]\n});\nconst config = $('Get Workflow Run Id').first().json;\nconst result = await traceable(\n\tasync () => {\n\t\treturn await agent.invoke({ \n\t\t\tmessages: [{ role: \"user\", content: userPrompt }],\n\t\t});\n\t},\n\t{ \n\t\tname: \"Title Generation\",\n\t\t...config\n\t},\n)();\nconst aiMessage = result.messages.findLast(m => m.type === \"ai\")?.content; \n\nconst parsedMessage = await outputParser.parse(aiMessage)\nreturn [parsedMessage.output];"
+            "code": "const { createAgent, createMiddleware, modelRetryMiddleware, providerStrategy } = require(\"langchain\");\nconst { traceable } = require(\"langsmith/traceable\");\n\nconst languageModel = await this.getInputConnectionData('ai_languageModel', 0);\n\nconst outputParser = await this.getInputConnectionData('ai_outputParser', 0);\n\nconst issue = $('Merge').first().json;\n\nconst NewsletterTitleSchema = $('Title Generator Schema').first().json;\nconst wrappedSchema = {\n\ttype: \"object\",\n\tproperties: {\n\t\toutput: NewsletterTitleSchema \n\t},\n\trequired: [\"output\"]\n};\n\nconst getLanguageDisplayName = (code) => {\n\ttry {\n\t\treturn new Intl.DisplayNames([code], { type: 'language' }).of(code);\n\t} catch {\n\t\treturn '';\n\t}\n};\n\nconst userPrompt = `\n\t\t\t[ROLE]\n\t\t\tYou are an AI assistant who creates newsletter titles based on GitHub issues.\n\n\t\t\t[OUTPUT RULES]\n\t\t\tYou must format your output as a JSON value that adheres to a given \"JSON Schema\" instance.\n\t\t\t\"JSON Schema\" is a declarative language that allows you to annotate and validate JSON documents.\n\t\t\tDo not include markdown code blocks in the output.\n\t\t\tTranslate all user-facing string values into ko-KR. Keep the keys in English.\n\n\t\t\t[TRANSLATE EXAMPLE]\n\t\t\tko-KR -> ${getLanguageDisplayName(\"ko-KR\")}\n\n\t\t\t[JSON SCHEMA]\n\t\t\t${JSON.stringify(wrappedSchema, null, 2)}\n\n\t\t\t[TASK]\n\t\t\t1. Read the provided GitHub issue.\n\t\t\t2. Generate a short, catchy newsletter title.\n\t\t\t3. The title should meet these criteria:\n\t\t\t\t\t- Include a relevant emoji at the beginning.\n\t\t\t\t\t- Be easy for a non-technical audience to understand.\n\t\t\t\t\t- Be fun and intriguing to maximize open rates.\n\t\t\t4. Translate the final title into ko-KR.\n\n\t\t\t[INPUT]\n\t\t\tPlease create a newsletter title for the issue below.\n\n\t\t\t### Issue\n\t\t\tTitle: ${issue.issueTitle}\n\t\t\tBody: ${issue.issueDescription}\n\t\t\tSummary: ${issue.summary}\n\t\t\tAnalogy: ${issue.analogy}\n\n\t\t\tOutput:\n\t`;\nclass TimeoutError extends Error {\n\tconstructor(message = 'Operation timed out') {\n\t\tsuper(message);\n\t\tthis.name = 'TimeoutError';\n\t}\n}\n\nconst timeoutMiddleware = (timeout = 90 * 1000) => {\n\tconst middlewareName = \"timeoutMiddleware\";\n\treturn createMiddleware({\n\t\tname: middlewareName,\n\t\twrapModelCall: async (request, handler) => {\n\t\t\tlet timeoutObj;\n\t\t\ttry {\n\t\t\t\treturn await Promise.race([\n\t\t\t\t\thandler(request),\n\t\t\t\t\tnew Promise((_, reject) => {\n\t\t\t\t\t\ttimeoutObj = setTimeout(() => reject(new TimeoutError()), timeout);\n\t\t\t\t\t})\n\t\t\t\t]);\n\t\t\t} finally {\n\t\t\t\tclearTimeout(timeoutObj);\n\t\t\t}\n\t\t},\n\t});\n};\n\nconst validateResponseMiddleware = createMiddleware({\n\tname: \"validateResponseTitleMiddleware\",\n\tafterModel: {\n\t\tcanJumpTo: [\"model\"],\n\t\thook: (state) => {\n\t\t\tconst lastMessage = state.messages[state.messages.length - 1];\n\t\t\tif (!lastMessage.content?.trim()) {\n\t\t\t\treturn { jumpTo: \"model\" }\n\t\t\t}\n\t\t\treturn;\n\t\t}\n\t}\n});\nconst agent = createAgent({\n\tmodel: languageModel,\n\tresponseFormat: providerStrategy(wrappedSchema),\n\tmiddleware: [\n\t\tvalidateResponseMiddleware,\n\t\tmodelRetryMiddleware({\n\t\t\tmaxRetries: 2,\n\t\t\tbackoffFactor: 2.0,\n\t\t\tinitialDelayMs: 20000,\n\t\t\tjitter: true,\n\t\t\tonFailure: \"error\",\n\t\t}),\n\t\ttimeoutMiddleware(120 * 1000),\n\t]\n});\nconst config = $('Get Workflow Run Id').first().json;\nconst result = await traceable(\n\tasync () => {\n\t\treturn await agent.invoke({ \n\t\t\tmessages: [{ role: \"user\", content: userPrompt }],\n\t\t});\n\t},\n\t{ \n\t\tname: \"Title Generation\",\n\t\t...config\n\t},\n)();\nconst aiMessage = result.messages.findLast(m => m.type === \"ai\")?.content; \n\nconst parsedMessage = await outputParser.parse(aiMessage)\nreturn [parsedMessage.output];"
           }
         },
         "inputs": {
@@ -456,150 +456,12 @@
     },
     {
       "parameters": {
-        "model": "openrouter/free",
-        "options": {
-          "timeout": 90000,
-          "maxRetries": 0
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
-      "typeVersion": 1,
-      "position": [
-        1632,
-        1024
-      ],
-      "id": "206678b6-ed2b-495f-87ba-ee7edd9b82e8",
-      "name": "OpenRouter Chat Model",
-      "credentials": {
-        "openRouterApi": {
-          "id": "openRouterApi",
-          "name": "OpenRouter account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "model": "openrouter/free",
-        "options": {
-          "timeout": 90000,
-          "maxRetries": 0
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
-      "typeVersion": 1,
-      "position": [
-        1984,
-        816
-      ],
-      "id": "2d5b8487-7f1f-4916-a887-77aeb688b095",
-      "name": "OpenRouter Chat Model1",
-      "credentials": {
-        "openRouterApi": {
-          "id": "openRouterApi",
-          "name": "OpenRouter account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "model": "openrouter/free",
-        "options": {
-          "timeout": 90000,
-          "maxRetries": 0
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
-      "typeVersion": 1,
-      "position": [
-        2576,
-        1104
-      ],
-      "id": "190ff326-6592-448a-aa9c-0484b5784ed5",
-      "name": "OpenRouter Chat Model2",
-      "credentials": {
-        "openRouterApi": {
-          "id": "openRouterApi",
-          "name": "OpenRouter account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "model": "openrouter/aurora-alpha",
-        "options": {
-          "timeout": 90000,
-          "maxRetries": 0
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
-      "typeVersion": 1,
-      "position": [
-        2912,
-        912
-      ],
-      "id": "073cccf8-40e8-4b3f-8824-2fd79022f012",
-      "name": "OpenRouter Chat Model3",
-      "credentials": {
-        "openRouterApi": {
-          "id": "openRouterApi",
-          "name": "OpenRouter account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "model": "openrouter/free",
-        "options": {
-          "timeout": 90000,
-          "maxRetries": 0
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
-      "typeVersion": 1,
-      "position": [
-        3520,
-        1088
-      ],
-      "id": "f83d0bf2-b556-4311-9bd5-7e72361a8046",
-      "name": "OpenRouter Chat Model4",
-      "credentials": {
-        "openRouterApi": {
-          "id": "openRouterApi",
-          "name": "OpenRouter account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "model": "openrouter/free",
-        "options": {
-          "timeout": 90000,
-          "maxRetries": 0
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
-      "typeVersion": 1,
-      "position": [
-        3840,
-        880
-      ],
-      "id": "b6e3d9be-9130-4c3e-b5a7-9291420a48df",
-      "name": "OpenRouter Chat Model5",
-      "credentials": {
-        "openRouterApi": {
-          "id": "openRouterApi",
-          "name": "OpenRouter account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "jsCode": "const workflowRunId = crypto.randomUUID();\nconst repoInfo = `${$('Load Repo Info').first().json.owner}/${$('Load Repo Info').first().json.name}`;\nconst config = {\n\tmetadata: {\n\t\trun_id: workflowRunId,\n\t\trepo: repoInfo,\n\t\temail: \"\",\n\t}\n};\nreturn config"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1424,
+        1440,
         592
       ],
       "id": "46ffce0f-923e-4ab4-a927-54a00073c269",
@@ -643,6 +505,190 @@
       ],
       "id": "ea1dc579-fbf1-48bf-bb79-acadc6def8ac",
       "name": "Make SES v2 Request Body"
+    },
+    {
+      "parameters": {
+        "url": "https://api.synthetic.new/openai/v1/models",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1232,
+        592
+      ],
+      "id": "bc6b7275-2ce5-47e3-9767-a51e0551a39a",
+      "name": "Get Models From Synthetic AI",
+      "credentials": {
+        "openAiApi": {
+          "id": "openAiApi",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "={{ $('Get Models From Synthetic AI').first().json.data[0].id }}",
+          "mode": "id"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1632,
+        1024
+      ],
+      "id": "4861c90e-7288-4a69-9db7-242d501e70e6",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "openAiApi",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "={{ $('Get Models From Synthetic AI').first().json.data[0].id }}",
+          "mode": "id"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2032,
+        816
+      ],
+      "id": "ff02d5cb-6fee-4949-a02a-de37dda8b3fa",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "openAiApi",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "={{ $('Get Models From Synthetic AI').first().json.data[0].id }}",
+          "mode": "id"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2560,
+        1088
+      ],
+      "id": "a43aaf73-0b72-446f-8629-6d358aa95d91",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "openAiApi",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "={{ $('Get Models From Synthetic AI').first().json.data[0].id }}",
+          "mode": "id"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2912,
+        928
+      ],
+      "id": "29c0d234-ebd3-47c5-8242-df81c67be923",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "openAiApi",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "={{ $('Get Models From Synthetic AI').first().json.data[0].id }}",
+          "mode": "id"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        3520,
+        1072
+      ],
+      "id": "b2eb428d-a957-4d4f-b91f-ecbab3f394b5",
+      "name": "OpenAI Chat Model4",
+      "credentials": {
+        "openAiApi": {
+          "id": "openAiApi",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "={{ $('Get Models From Synthetic AI').first().json.data[0].id }}",
+          "mode": "id"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        3824,
+        848
+      ],
+      "id": "88552d15-5dbb-4490-a135-dc0399cc2b02",
+      "name": "OpenAI Chat Model5",
+      "credentials": {
+        "openAiApi": {
+          "id": "openAiApi",
+          "name": "OpenAi account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -689,7 +735,7 @@
       "main": [
         [
           {
-            "node": "Get Workflow Run Id",
+            "node": "Get Models From Synthetic AI",
             "type": "main",
             "index": 0
           }
@@ -839,72 +885,6 @@
         ]
       ]
     },
-    "OpenRouter Chat Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Issue Analysis Structured Output Parser",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenRouter Chat Model1": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Issue Analysis Langchain Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenRouter Chat Model2": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Deepwiki Structured Output Parser",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenRouter Chat Model3": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Deepwiki Langchain agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenRouter Chat Model4": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Title Generator Structured Output Parser",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenRouter Chat Model5": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Title Generator Langchain Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Get Workflow Run Id": {
       "main": [
         [
@@ -926,13 +906,90 @@
           }
         ]
       ]
+    },
+    "Get Models From Synthetic AI": {
+      "main": [
+        [
+          {
+            "node": "Get Workflow Run Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Issue Analysis Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Issue Analysis Langchain Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Deepwiki Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Deepwiki Langchain agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Title Generator Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Title Generator Langchain Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "e864f777-3fcc-41ab-95dd-50579f0fe6b3",
+  "versionId": "1b353d0f-bebb-411b-b0fa-4d9cf0ded39a",
   "meta": {
     "instanceId": "57a13954f4ed37a4193a2c26d525fd5349259869b863b1ee01d7592b5d74be96",
     "templateCredsSetupCompleted": true
