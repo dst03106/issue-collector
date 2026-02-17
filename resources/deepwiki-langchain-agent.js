@@ -186,7 +186,7 @@ const deepwikiLangchainAgent = async () => {
 				onFailure: "error",
 			}),
 			jitterMiddleware,
-			timeoutMiddleware(120 * 1000),
+			timeoutMiddleware(3 * 60 * 1000),
 		]
 	});
 	const outputParser = await this.getInputConnectionData('ai_outputParser', 0);

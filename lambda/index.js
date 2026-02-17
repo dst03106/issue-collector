@@ -12,8 +12,8 @@ function executeWorkflow({
 			REPO: repo,
 			EMAIL: email,
 		},
-		timeout: 300000, // 5분 타임아웃 (밀리초)
-		maxBuffer: 1024 * 1024, // 1MB 버퍼
+		timeout: 15 * 60 * 1000, 		
+		maxBuffer: 1024 * 1024, 	
 	};
 	return new Promise((resolve, reject) => {
 		execFile('./scripts/entrypoint.sh', [], options, (error, stdout, stderr) => {

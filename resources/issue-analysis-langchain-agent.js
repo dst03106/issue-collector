@@ -124,7 +124,7 @@ const issueAnalysisLangchainAgent = async () => {
 				jitter: true,
 				onFailure: "error",
 			}),
-			timeoutMiddleware(120 * 1000),
+			timeoutMiddleware(4 * 60 * 1000),
 		]
 	});
 	const config = $('Get Workflow Run Id').first().json;

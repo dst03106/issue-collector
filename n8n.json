@@ -483,7 +483,7 @@
       "parameters": {
         "model": "openrouter/free",
         "options": {
-          "timeout": 90000,
+          "timeout": 180000,
           "maxRetries": 0
         }
       },
@@ -506,7 +506,7 @@
       "parameters": {
         "model": "openrouter/free",
         "options": {
-          "timeout": 90000,
+          "timeout": 240000,
           "maxRetries": 0
         }
       },
@@ -529,7 +529,7 @@
       "parameters": {
         "model": "openrouter/free",
         "options": {
-          "timeout": 90000,
+          "timeout": 180000,
           "maxRetries": 0
         }
       },
@@ -552,7 +552,7 @@
       "parameters": {
         "model": "openrouter/aurora-alpha",
         "options": {
-          "timeout": 90000,
+          "timeout": 180000,
           "maxRetries": 0
         }
       },
@@ -575,7 +575,7 @@
       "parameters": {
         "model": "openrouter/free",
         "options": {
-          "timeout": 90000,
+          "timeout": 180000,
           "maxRetries": 0
         }
       },
@@ -598,7 +598,7 @@
       "parameters": {
         "model": "openrouter/free",
         "options": {
-          "timeout": 90000,
+          "timeout": 180000,
           "maxRetries": 0
         }
       },
