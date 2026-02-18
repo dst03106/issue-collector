@@ -2,8 +2,8 @@ const makeSESV2RequestBody = () => {
 	const repoInfo = `${$('Load Repo Info').first().json.owner}/${$('Load Repo Info').first().json.name}`;
 	const title = $('Title Generator Langchain Agent').first().json.title;
 	const requestBody = {
-		FromEmailAddress: "noreply@dst03106.link",
-		Destination: { ToAddresses: ["{email}"] },
+		FromEmailAddress: "___FROM_EMAIL___",
+		Destination: { ToAddresses: ["___TO_EMAIL___"] },
 		Content: {
 			Simple: {
 				Subject: { Data: `[Issue Report] ${repoInfo} - ${title}`, Charset: "UTF-8" },
@@ -25,5 +25,6 @@ const makeSESV2RequestBody = () => {
 module.exports = {
 	"jsCode": makeSESV2RequestBody
 							.toString()
-							.replace(/{email}/g, process.env.EMAIL)
+							.replace(/___TO_EMAIL___/g, process.env.EMAIL)
+							.replace(/___FROM_EMAIL___/g, process.env.FROM_EMAIL || process.env.EMAIL)
 };
