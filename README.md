@@ -1,6 +1,6 @@
-![issue-collector](https://github.com/user-attachments/assets/7165b1ef-c5ea-473c-bf87-19ac5790dc00)
-
+![output1](https://github.com/user-attachments/assets/e4f69686-aeb0-459d-9bcc-ab644c6b28c2)
 # IssueCollector
+
 Receive a periodic newsletter with curated, contributor-friendly issues from your favorite repositories, for free, using Github Actions and Open Router.
 
 The brain recognizes things it sees frequently as important. To encourage open-source contributions, regularly review issues and recent releases.
